@@ -1,0 +1,25 @@
+main: me.wmorales01.mycteriaeconomy.MycteriaEconomy
+name: MycteriaEconomy
+version: 0.1
+author: Wmorales01
+
+api-version: 1.16
+
+commands:
+  npcshop:
+
+  gui:
+
+  cash:
+
+  wallet:
+
+  setbalance:
+
+  removecash:
+
+  createatm:
+
+  linkmachine:
+
+  linknpc:

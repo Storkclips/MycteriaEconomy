@@ -1,0 +1,5 @@
+# Necesary amount of a shop item to start getting a discount.
+# Ex. If there is more than 300 stock, apply discount.
+npcshop-stock-amount-discount: 300
+
+wallet-item: LEATHER
