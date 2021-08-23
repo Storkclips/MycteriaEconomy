@@ -1,7 +1,7 @@
 package me.wmorales01.mycteriaeconomy;
 
 import me.wmorales01.mycteriaeconomy.commands.*;
-import me.wmorales01.mycteriaeconomy.events.*;
+import me.wmorales01.mycteriaeconomy.listeners.*;
 import me.wmorales01.mycteriaeconomy.files.*;
 import me.wmorales01.mycteriaeconomy.models.*;
 import me.wmorales01.mycteriaeconomy.recipes.MachineRecipes;
@@ -20,19 +20,16 @@ public class MycteriaEconomy extends JavaPlugin {
     private WalletManager walletManager;
     private MachineData machineData;
     private MachineManager machineManager;
-    private EconomyPlayerData ecoPlayerData;
-    private EconomyPlayerManager ecoPlayerManager;
+    private EconomyPlayerManager economyPlayerManager;
     private NPCData npcData;
     private NPCDataManager npcDataManager;
-
     private Map<UUID, Wallet> openWallets = new HashMap<>();
     private Map<String, NPCCommand> npcSubcommands = new HashMap<>();
+    private final Map<Player, EconomyPlayer> economyPlayers = new HashMap<>();
     private Map<Player, Machine> machineLinkers = new HashMap<>();
     private Map<Player, Chest> npcLinkers = new HashMap<>();
 
     private Set<Wallet> wallets = new HashSet<>();
-
-    private List<EconomyPlayer> economyPlayers = new ArrayList<>();
     private List<Player> ATMPlacers = new ArrayList<>();
     private List<Player> ATMBreakers = new ArrayList<>();
     private List<ATM> ATMs = new ArrayList<>();
@@ -42,6 +39,10 @@ public class MycteriaEconomy extends JavaPlugin {
     private List<NPCShop> npcs = new ArrayList<>();
     private List<NPCOperator> npcOperators = new ArrayList<>();
 
+    public static MycteriaEconomy getInstance() {
+        return MycteriaEconomy.getPlugin(MycteriaEconomy.class);
+    }
+
     @Override
     public void onEnable() {
         saveDefaultConfig();
@@ -49,8 +50,7 @@ public class MycteriaEconomy extends JavaPlugin {
         walletManager = new WalletManager(this);
         machineData = new MachineData(this);
         machineManager = new MachineManager(this);
-        ecoPlayerData = new EconomyPlayerData(this);
-        ecoPlayerManager = new EconomyPlayerManager(this);
+        economyPlayerManager = new EconomyPlayerManager(this);
         npcData = new NPCData(this);
         npcDataManager = new NPCDataManager(this);
 
@@ -67,7 +67,7 @@ public class MycteriaEconomy extends JavaPlugin {
         npcSubcommands.put("tool", new NPCCommandTool());
 
         PluginManager pm = getServer().getPluginManager();
-        pm.registerEvents(new PlayerConnection(this), this);
+        pm.registerEvents(new PlayerConnectionHandler(this), this);
         pm.registerEvents(new WalletHandler(this), this);
         pm.registerEvents(new CreativeGUIClick(), this);
         pm.registerEvents(new ATMPlace(this), this);
@@ -88,7 +88,7 @@ public class MycteriaEconomy extends JavaPlugin {
 
         walletManager.restoreWallets();
         machineManager.loadAllMachines();
-        ecoPlayerManager.loadEconomyPlayers();
+        economyPlayerManager.loadOnlineEconomyPlayers();
 
         npcDataManager.restoreNpcData();
         NPCManager npcManager = new NPCManager(this);
@@ -103,7 +103,7 @@ public class MycteriaEconomy extends JavaPlugin {
     public void onDisable() {
         walletManager.saveWallets();
         machineManager.saveAllMachines();
-        ecoPlayerManager.saveEconomyPlayers();
+        economyPlayerManager.saveOnlineEconomyPlayers();
         npcDataManager.saveAllNPCs();
 
         PacketManager packetManager = new PacketManager(this);
@@ -114,10 +114,6 @@ public class MycteriaEconomy extends JavaPlugin {
             packetManager.uninjectPacket(online);
         for (NPCShop shop : npcs)
             npcManager.deleteNPC(shop, false);
-    }
-
-    public static MycteriaEconomy getInstance() {
-        return MycteriaEconomy.getPlugin(MycteriaEconomy.class);
     }
 
     public FileConfiguration getWalletData() {
@@ -134,14 +130,6 @@ public class MycteriaEconomy extends JavaPlugin {
 
     public void saveMachineData() {
         machineData.saveConfig();
-    }
-
-    public FileConfiguration getEcoPlayerData() {
-        return ecoPlayerData.getConfig();
-    }
-
-    public void saveEcoPlayerData() {
-        ecoPlayerData.saveConfig();
     }
 
     public FileConfiguration getNPCData() {
@@ -166,14 +154,6 @@ public class MycteriaEconomy extends JavaPlugin {
 
     public void addOpenWallet(UUID uuid, Wallet wallet) {
         openWallets.put(uuid, wallet);
-    }
-
-    public List<EconomyPlayer> getEconomyPlayers() {
-        return economyPlayers;
-    }
-
-    public void addEconomyPlayers(EconomyPlayer economyPlayer) {
-        economyPlayers.add(economyPlayer);
     }
 
     public List<Player> getATMPlacers() {
@@ -208,6 +188,10 @@ public class MycteriaEconomy extends JavaPlugin {
         return npcSubcommands;
     }
 
+    public Map<Player, EconomyPlayer> getEconomyPlayers() {
+        return economyPlayers;
+    }
+
     public Map<Player, Machine> getMachineLinkers() {
         return machineLinkers;
     }
@@ -222,5 +206,9 @@ public class MycteriaEconomy extends JavaPlugin {
 
     public NPCDataManager getNpcDataManager() {
         return npcDataManager;
+    }
+
+    public EconomyPlayerManager getEconomyPlayerManager() {
+        return economyPlayerManager;
     }
 }

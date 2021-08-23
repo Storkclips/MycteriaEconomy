@@ -8,24 +8,29 @@ import org.bukkit.entity.Player;
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 
 public class EconomyPlayer {
+	private final Player player;
 	private double bankBalance;
-	private UUID uuid;
 
 	public EconomyPlayer(Player player) {
-		MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-		this.uuid = player.getUniqueId();
-		plugin.addEconomyPlayers(this);
-	}
-	
-	public EconomyPlayer(UUID uuid) {
-		MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-		this.uuid = uuid;
-		plugin.addEconomyPlayers(this);
+		this.player = player;
 	}
 
-	public EconomyPlayer(UUID uuid, double balance) {
-		this.uuid = uuid;
+	public EconomyPlayer(Player player, double balance) {
+		this.player = player;
 		this.bankBalance = balance;
+	}
+
+	public void registerEconomyPlayer() {
+		MycteriaEconomy.getInstance().getEconomyPlayers().put(player, this);
+	}
+
+	public void unregisterEconomyPlayer() {
+		MycteriaEconomy.getInstance().getEconomyPlayers().remove(player);
+		savePlayerData();
+	}
+
+	public void savePlayerData() {
+		MycteriaEconomy.getInstance().getEconomyPlayerManager().saveEconomyPlayer(this);
 	}
 
 	public double getBankBalance() {
@@ -45,38 +50,10 @@ public class EconomyPlayer {
 	}
 
 	public Player getPlayer() {
-		return Bukkit.getPlayer(uuid);
+		return player;
 	}
 
 	public static EconomyPlayer fromPlayer(Player player) {
-		MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-
-		EconomyPlayer result = null;
-		for (EconomyPlayer ecoPlayer : plugin.getEconomyPlayers()) {
-			if (!ecoPlayer.getPlayer().equals(player))
-				continue;
-
-			result = ecoPlayer;
-		}
-
-		return result;
-	}
-	
-	public static EconomyPlayer fromUUID(UUID uuid) {
-		MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-
-		EconomyPlayer result = null;
-		for (EconomyPlayer ecoPlayer : plugin.getEconomyPlayers()) {
-			if (!ecoPlayer.getPlayer().getUniqueId().equals(uuid))
-				continue;
-
-			result = ecoPlayer;
-		}
-
-		return result;
-	}
-
-	public UUID getUuid() {
-		return uuid;
+		return MycteriaEconomy.getInstance().getEconomyPlayers().get(player);
 	}
 }

@@ -1,47 +1,53 @@
 package me.wmorales01.mycteriaeconomy.files;
 
-import java.util.UUID;
-
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import me.wmorales01.mycteriaeconomy.models.EconomyPlayer;
+import org.bukkit.Bukkit;
+import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.entity.Player;
 
 public class EconomyPlayerManager {
-	private MycteriaEconomy plugin;
-	FileConfiguration data;
+	private final EconomyPlayersFile economyPlayersFile;
 	
-	public EconomyPlayerManager(MycteriaEconomy instance) {
-		plugin = instance;
+	public EconomyPlayerManager(MycteriaEconomy plugin) {
+		this.economyPlayersFile = new EconomyPlayersFile(plugin);
+	}
+
+	public void saveEconomyPlayer(EconomyPlayer economyPlayer) {
+		FileConfiguration data = getPlayersData();
+		String path = "economy-players." + economyPlayer.getPlayer().getUniqueId() + ".";
+		data.set(path + "balance", economyPlayer.getBankBalance());
+		savePlayersData();
 	}
 	
-	public void saveEconomyPlayers() {
-		data = plugin.getEcoPlayerData();
-		if (plugin.getEconomyPlayers().isEmpty())
-			return;
-		
-		for (EconomyPlayer ecoPlayer : plugin.getEconomyPlayers()) {
-			String uuid = ecoPlayer.getUuid().toString();
-			double balance = ecoPlayer.getBankBalance();
-			
-			data.set("economy-players." + uuid + ".balance", balance);
+	public void saveOnlineEconomyPlayers() {
+		for (Player online : Bukkit.getOnlinePlayers()) {
+			EconomyPlayer.fromPlayer(online).unregisterEconomyPlayer();
 		}
-		plugin.saveEcoPlayerData();
+	}
+
+	public EconomyPlayer loadEconomyPlayer(Player player) {
+		ConfigurationSection playerSection = getPlayersData().getConfigurationSection("economy-players." +
+				player.getUniqueId());
+		if (playerSection == null) {
+			return new EconomyPlayer(player);
+		}
+		double bankBalance = playerSection.getDouble("balance");
+		return new EconomyPlayer(player, bankBalance);
 	}
 	
-	public void loadEconomyPlayers() {
-		data = plugin.getEcoPlayerData();
-		ConfigurationSection playerSection = data.getConfigurationSection("economy-players");
-		if (playerSection == null)
-			return;
-		
-		playerSection.getKeys(false).forEach(stringUuid -> {
-			UUID uuid = UUID.fromString(stringUuid);
-			double balance = data.getDouble("economy-players." + stringUuid + ".balance");
-			
-			EconomyPlayer ecoPlayer = new EconomyPlayer(uuid, balance);
-			plugin.addEconomyPlayers(ecoPlayer);
-		});
+	public void loadOnlineEconomyPlayers() {
+		for (Player online : Bukkit.getOnlinePlayers()) {
+			loadEconomyPlayer(online).registerEconomyPlayer();
+		}
+	}
+
+	private FileConfiguration getPlayersData() {
+		return economyPlayersFile.getData();
+	}
+
+	private void savePlayersData() {
+		economyPlayersFile.saveData();
 	}
 }
