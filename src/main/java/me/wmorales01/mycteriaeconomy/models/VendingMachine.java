@@ -1,12 +1,10 @@
 package me.wmorales01.mycteriaeconomy.models;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.UUID;
-
+import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
+import me.wmorales01.mycteriaeconomy.inventories.MachineHolder;
+import me.wmorales01.mycteriaeconomy.util.BalanceManager;
+import me.wmorales01.mycteriaeconomy.util.Framer;
+import me.wmorales01.mycteriaeconomy.util.Messager;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
@@ -16,11 +14,12 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-import me.wmorales01.mycteriaeconomy.inventories.MachineHolder;
-import me.wmorales01.mycteriaeconomy.util.BalanceManager;
-import me.wmorales01.mycteriaeconomy.util.Framer;
-import me.wmorales01.mycteriaeconomy.util.Messager;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.UUID;
 
 public class VendingMachine extends Machine {
     private double profit;
@@ -52,6 +51,18 @@ public class VendingMachine extends Machine {
         vendingMachine.setItemMeta(meta);
 
         return vendingMachine;
+    }
+
+    public static VendingMachine getVendingMachine(Location location) {
+        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
+        for (VendingMachine machine : plugin.getVendingMachines()) {
+            if (!machine.getLocation().equals(location))
+                continue;
+
+            return machine;
+        }
+
+        return null;
     }
 
     public void addStock(MachineItem item) {
@@ -143,18 +154,6 @@ public class VendingMachine extends Machine {
             break;
         }
         return inventory;
-    }
-
-    public static VendingMachine getVendingMachine(Location location) {
-        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-        for (VendingMachine machine : plugin.getVendingMachines()) {
-            if (!machine.getLocation().equals(location))
-                continue;
-
-            return machine;
-        }
-
-        return null;
     }
 
     public double getProfit() {

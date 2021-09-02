@@ -22,15 +22,15 @@ public class SFXManager {
         Player player = (Player) sender;
         player.playSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BASS, 1, 2);
     }
-    
+
     public static void playPlayerSound(CommandSender sender, Sound sound, float volume, float pitch) {
-    	if (sender == null)
-    		return;
-    	if (!(sender instanceof Player))
-    		return;
-    	
-    	Player player = (Player) sender;
-    	Location location = player.getLocation();
-    	player.playSound(location, sound, volume, pitch);
+        if (sender == null)
+            return;
+        if (!(sender instanceof Player))
+            return;
+
+        Player player = (Player) sender;
+        Location location = player.getLocation();
+        player.playSound(location, sound, volume, pitch);
     }
 }

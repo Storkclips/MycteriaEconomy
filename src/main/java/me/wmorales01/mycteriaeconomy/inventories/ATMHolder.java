@@ -5,9 +5,9 @@ import org.bukkit.inventory.InventoryHolder;
 
 public class ATMHolder implements InventoryHolder {
 
-	@Override
-	public Inventory getInventory() {
-		return null;
-	}
-	
+    @Override
+    public Inventory getInventory() {
+        return null;
+    }
+
 }

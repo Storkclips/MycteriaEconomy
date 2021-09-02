@@ -1,64 +1,63 @@
 package me.wmorales01.mycteriaeconomy.models;
 
+import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 
-import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-
 public class MachineOperator {
-	private Player player;
-	private Machine machine;
-	private ItemStack selectedItem;
+    private Player player;
+    private Machine machine;
+    private ItemStack selectedItem;
 
-	public MachineOperator(Player player, Machine machine, ItemStack selectedItem) {
-		this.player = player;
-		this.machine = machine;
-		this.selectedItem = selectedItem;
-	}
+    public MachineOperator(Player player, Machine machine, ItemStack selectedItem) {
+        this.player = player;
+        this.machine = machine;
+        this.selectedItem = selectedItem;
+    }
 
-	public MachineOperator(Player player, ItemStack selectedItem) {
-		this.player = player;
-		this.selectedItem = selectedItem;
-	}
+    public MachineOperator(Player player, ItemStack selectedItem) {
+        this.player = player;
+        this.selectedItem = selectedItem;
+    }
 
-	public Player getPlayer() {
-		return player;
-	}
+    public static MachineOperator getOperator(Player player) {
+        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
+        for (MachineOperator operator : plugin.getVendingOperators()) {
+            if (!operator.getPlayer().equals(player))
+                continue;
 
-	public void setPlayer(Player player) {
-		this.player = player;
-	}
+            return operator;
+        }
+        for (NPCOperator operator : plugin.getNpcOperators()) {
+            if (!operator.getPlayer().equals(player))
+                continue;
 
-	public Machine getMachine() {
-		return machine;
-	}
+            return operator;
+        }
+        return null;
+    }
 
-	public void setMachine(VendingMachine machine) {
-		this.machine = machine;
-	}
+    public Player getPlayer() {
+        return player;
+    }
 
-	public ItemStack getSelectedItem() {
-		return selectedItem;
-	}
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
 
-	public void setSelectedItem(ItemStack selectedItem) {
-		this.selectedItem = selectedItem;
-	}
+    public Machine getMachine() {
+        return machine;
+    }
 
-	public static MachineOperator getOperator(Player player) {
-		MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-		for (MachineOperator operator : plugin.getVendingOperators()) {
-			if (!operator.getPlayer().equals(player))
-				continue;
+    public void setMachine(VendingMachine machine) {
+        this.machine = machine;
+    }
 
-			return operator;
-		}
-		for (NPCOperator operator : plugin.getNpcOperators()) {
-			if (!operator.getPlayer().equals(player))
-				continue;
-			
-			return operator;
-		}
-		return null;
-	}
+    public ItemStack getSelectedItem() {
+        return selectedItem;
+    }
+
+    public void setSelectedItem(ItemStack selectedItem) {
+        this.selectedItem = selectedItem;
+    }
 }

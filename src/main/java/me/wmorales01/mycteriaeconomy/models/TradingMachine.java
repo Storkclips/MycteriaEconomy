@@ -50,16 +50,16 @@ public class TradingMachine extends Machine {
         return machineBalance;
     }
 
+    public void setMachineBalance(double balance) {
+        this.machineBalance = balance;
+    }
+
     public void addMachineBalance(double amount) {
         machineBalance += amount;
     }
 
     public void reduceMachineBalance(double amount) {
         machineBalance -= amount;
-    }
-
-    public void setMachineBalance(double balance) {
-        this.machineBalance = balance;
     }
 
     public void withdrawMachineBalance() {

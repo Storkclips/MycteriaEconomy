@@ -1,56 +1,55 @@
 package me.wmorales01.mycteriaeconomy.files;
 
-import java.util.List;
-import java.util.UUID;
-
+import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
+import me.wmorales01.mycteriaeconomy.models.Wallet;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-import me.wmorales01.mycteriaeconomy.models.Wallet;
+import java.util.List;
+import java.util.UUID;
 
 public class WalletManager {
-	private MycteriaEconomy plugin;
+    private MycteriaEconomy plugin;
 
-	public WalletManager(MycteriaEconomy instance) {
-		plugin = instance;
-	}
+    public WalletManager(MycteriaEconomy instance) {
+        plugin = instance;
+    }
 
-	public void saveWallets() {
-		FileConfiguration data = plugin.getWalletData();
-		
-		for (Wallet wallet : plugin.getWallets()) {
-			UUID uuid = wallet.getUuid();
-			double balance = wallet.getBalance();
-			ItemStack[] content = wallet.getContent().getContents();
+    public void saveWallets() {
+        FileConfiguration data = plugin.getWalletData();
 
-			data.set("wallets." + uuid.toString() + ".balance", balance);
-			data.set("wallets." + uuid.toString() + ".content", content);
-		}
+        for (Wallet wallet : plugin.getWallets()) {
+            UUID uuid = wallet.getUuid();
+            double balance = wallet.getBalance();
+            ItemStack[] content = wallet.getContent().getContents();
 
-		plugin.saveWalletData();
-	}
+            data.set("wallets." + uuid.toString() + ".balance", balance);
+            data.set("wallets." + uuid.toString() + ".content", content);
+        }
 
-	public void restoreWallets() {
-		FileConfiguration data = plugin.getWalletData();
-		ConfigurationSection section = data.getConfigurationSection("wallets");
-		if (section == null)
-			return;
+        plugin.saveWalletData();
+    }
 
-		section.getKeys(false).forEach(uuid -> {
-			double balance = data.getDouble("wallets." + uuid + ".balance");
-			@SuppressWarnings("unchecked")
-			ItemStack[] contents = ((List<ItemStack>) data.get("wallets." + uuid + ".content"))
-					.toArray(new ItemStack[0]);
+    public void restoreWallets() {
+        FileConfiguration data = plugin.getWalletData();
+        ConfigurationSection section = data.getConfigurationSection("wallets");
+        if (section == null)
+            return;
 
-			Inventory content = Bukkit.createInventory(null, 36);
-			content.setContents(contents);
-			Wallet wallet = new Wallet(UUID.fromString(uuid), balance, content);
+        section.getKeys(false).forEach(uuid -> {
+            double balance = data.getDouble("wallets." + uuid + ".balance");
+            @SuppressWarnings("unchecked")
+            ItemStack[] contents = ((List<ItemStack>) data.get("wallets." + uuid + ".content"))
+                    .toArray(new ItemStack[0]);
 
-			plugin.addWallet(wallet);
-		});
-	}
+            Inventory content = Bukkit.createInventory(null, 36);
+            content.setContents(contents);
+            Wallet wallet = new Wallet(UUID.fromString(uuid), balance, content);
+
+            plugin.addWallet(wallet);
+        });
+    }
 }

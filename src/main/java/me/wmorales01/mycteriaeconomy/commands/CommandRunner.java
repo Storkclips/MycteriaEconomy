@@ -1,6 +1,8 @@
 package me.wmorales01.mycteriaeconomy.commands;
 
+import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import me.wmorales01.mycteriaeconomy.models.Machine;
+import me.wmorales01.mycteriaeconomy.util.Messager;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.Chest;
@@ -8,9 +10,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
-import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-import me.wmorales01.mycteriaeconomy.util.Messager;
 
 import java.util.Set;
 

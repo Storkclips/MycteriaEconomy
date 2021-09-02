@@ -35,6 +35,29 @@ public class Wallet {
         this.content = content;
     }
 
+    public static Wallet getByItemStack(ItemStack item) {
+        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
+        NamespacedKey key = new NamespacedKey(plugin, "wallet_id");
+        if (item == null)
+            return null;
+        if (!item.hasItemMeta())
+            return null;
+        if (item.getItemMeta().getPersistentDataContainer() == null)
+            return null;
+        if (!item.getItemMeta().getPersistentDataContainer().has(key, new UUIDDataContainer()))
+            return null;
+
+        UUID itemUUID = item.getItemMeta().getPersistentDataContainer().get(key, new UUIDDataContainer());
+        for (Wallet wallet : plugin.getWallets()) {
+            UUID walletUUID = wallet.getUuid();
+            if (!walletUUID.equals(itemUUID))
+                continue;
+
+            return wallet;
+        }
+        return null;
+    }
+
     public ItemStack getItemStack() {
         MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
         ItemStack item = new ItemStack(ConfigManager.getWalletItem());
@@ -162,29 +185,6 @@ public class Wallet {
 
     public void setContent(Inventory content) {
         this.content = content;
-    }
-
-    public static Wallet getByItemStack(ItemStack item) {
-        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-        NamespacedKey key = new NamespacedKey(plugin, "wallet_id");
-        if (item == null)
-            return null;
-        if (!item.hasItemMeta())
-            return null;
-        if (item.getItemMeta().getPersistentDataContainer() == null)
-            return null;
-        if (!item.getItemMeta().getPersistentDataContainer().has(key, new UUIDDataContainer()))
-            return null;
-
-        UUID itemUUID = item.getItemMeta().getPersistentDataContainer().get(key, new UUIDDataContainer());
-        for (Wallet wallet : plugin.getWallets()) {
-            UUID walletUUID = wallet.getUuid();
-            if (!walletUUID.equals(itemUUID))
-                continue;
-
-            return wallet;
-        }
-        return null;
     }
 
     public boolean isSimilar(ItemStack item) {

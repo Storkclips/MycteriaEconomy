@@ -1,59 +1,55 @@
 package me.wmorales01.mycteriaeconomy.models;
 
-import java.util.UUID;
-
-import org.bukkit.Bukkit;
+import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import org.bukkit.entity.Player;
 
-import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-
 public class EconomyPlayer {
-	private final Player player;
-	private double bankBalance;
+    private final Player player;
+    private double bankBalance;
 
-	public EconomyPlayer(Player player) {
-		this.player = player;
-	}
+    public EconomyPlayer(Player player) {
+        this.player = player;
+    }
 
-	public EconomyPlayer(Player player, double balance) {
-		this.player = player;
-		this.bankBalance = balance;
-	}
+    public EconomyPlayer(Player player, double balance) {
+        this.player = player;
+        this.bankBalance = balance;
+    }
 
-	public void registerEconomyPlayer() {
-		MycteriaEconomy.getInstance().getEconomyPlayers().put(player, this);
-	}
+    public static EconomyPlayer fromPlayer(Player player) {
+        return MycteriaEconomy.getInstance().getEconomyPlayers().get(player);
+    }
 
-	public void unregisterEconomyPlayer() {
-		MycteriaEconomy.getInstance().getEconomyPlayers().remove(player);
-		savePlayerData();
-	}
+    public void registerEconomyPlayer() {
+        MycteriaEconomy.getInstance().getEconomyPlayers().put(player, this);
+    }
 
-	public void savePlayerData() {
-		MycteriaEconomy.getInstance().getEconomyPlayerManager().saveEconomyPlayer(this);
-	}
+    public void unregisterEconomyPlayer() {
+        MycteriaEconomy.getInstance().getEconomyPlayers().remove(player);
+        savePlayerData();
+    }
 
-	public double getBankBalance() {
-		return bankBalance;
-	}
+    public void savePlayerData() {
+        MycteriaEconomy.getInstance().getEconomyPlayerManager().saveEconomyPlayer(this);
+    }
 
-	public void setBankBalance(double bankBalance) {
-		this.bankBalance = bankBalance;
-	}
+    public double getBankBalance() {
+        return bankBalance;
+    }
 
-	public void addBankBalance(double amount) {
-		this.bankBalance += amount;
-	}
+    public void setBankBalance(double bankBalance) {
+        this.bankBalance = bankBalance;
+    }
 
-	public void removeBankBalance(double amount) {
-		this.bankBalance -= amount;
-	}
+    public void addBankBalance(double amount) {
+        this.bankBalance += amount;
+    }
 
-	public Player getPlayer() {
-		return player;
-	}
+    public void removeBankBalance(double amount) {
+        this.bankBalance -= amount;
+    }
 
-	public static EconomyPlayer fromPlayer(Player player) {
-		return MycteriaEconomy.getInstance().getEconomyPlayers().get(player);
-	}
+    public Player getPlayer() {
+        return player;
+    }
 }
