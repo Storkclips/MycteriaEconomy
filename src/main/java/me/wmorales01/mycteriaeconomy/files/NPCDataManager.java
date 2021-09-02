@@ -19,23 +19,26 @@ import java.util.List;
 import java.util.UUID;
 
 public class NPCDataManager {
-    private MycteriaEconomy plugin;
+    private final NPCDataFile npcDataFile;
+    private final MycteriaEconomy plugin;
 
     public NPCDataManager(MycteriaEconomy plugin) {
+        this.npcDataFile = new NPCDataFile(plugin);
         this.plugin = plugin;
     }
 
     public void saveAllNPCs() {
-        for (NPCShop shop : plugin.getNpcs())
+        for (NPCShop shop : plugin.getNpcShops()) {
             saveNPC(shop);
+        }
     }
 
     public void saveNPC(NPCShop shop) {
-        FileConfiguration data = plugin.getNPCData();
+        FileConfiguration data = getNPCData();
         EntityPlayer npc = shop.getNpc();
         Location location = npc.getBukkitEntity().getLocation();
         GameProfile profile = npc.getProfile();
-        Property property = null;
+        Property property;
         String[] properties = new String[2];
         if (!profile.getProperties().get("textures").isEmpty()) {
             property = profile.getProperties().get("textures").iterator().next();
@@ -76,59 +79,58 @@ public class NPCDataManager {
             data.set(path + ".stock." + varItem + ".stock-amount", stockAmount);
             varItem++;
         }
-        plugin.saveNPCData();
+        saveNPCData();
     }
 
     public void restoreNpcData() {
-        FileConfiguration data = plugin.getNPCData();
+        FileConfiguration data = getNPCData();
         NPCManager manager = new NPCManager(plugin);
         ConfigurationSection section = data.getConfigurationSection("npcs");
-        if (section == null)
-            return;
+        if (section == null) return;
 
-        section.getKeys(false).forEach(npc -> {
+        for (String npcKey : section.getKeys(false)) {
             // Getting Location
-            World world = Bukkit.getWorld(section.getString(npc + ".world"));
-            double x = section.getDouble(npc + ".x");
-            double y = section.getDouble(npc + ".y");
-            double z = section.getDouble(npc + ".z");
-            float pitch = (float) section.getDouble(npc + ".pitch");
-            float yaw = (float) section.getDouble(npc + ".yaw");
+            World world = Bukkit.getWorld(section.getString(npcKey + ".world"));
+            double x = section.getDouble(npcKey + ".x");
+            double y = section.getDouble(npcKey + ".y");
+            double z = section.getDouble(npcKey + ".z");
+            float pitch = (float) section.getDouble(npcKey + ".pitch");
+            float yaw = (float) section.getDouble(npcKey + ".yaw");
             Location location = new Location(world, x, y, z);
             location.setPitch(pitch);
             location.setYaw(yaw);
 
             // Getting profile and skin
-            GameProfile gameProfile = new GameProfile(UUID.fromString(npc), "");
-            if (section.getString(npc + ".texture") != null) {
-                String texture = section.getString(npc + ".texture");
-                String signature = section.getString(npc + ".signature");
+            GameProfile gameProfile = new GameProfile(UUID.fromString(npcKey), "");
+            if (section.getString(npcKey + ".texture") != null) {
+                String texture = section.getString(npcKey + ".texture");
+                String signature = section.getString(npcKey + ".signature");
                 gameProfile.getProperties().put("textures", new Property("textures", texture, signature));
             }
-            ConfigurationSection chestSection = section
-                    .getConfigurationSection(npc + ".chest-locations");
             List<Location> chestLocations = new ArrayList<>();
+            ConfigurationSection chestSection = section
+                    .getConfigurationSection(npcKey + ".chest-locations");
             if (chestSection != null) {
-                chestSection.getKeys(false).forEach(chestLocation -> {
-                    int chestX = chestSection.getInt(chestLocation + ".x");
-                    int chestY = chestSection.getInt(chestLocation + ".y");
-                    int chestZ = chestSection.getInt(chestLocation + ".z");
-                    World chestWorld = Bukkit.getWorld(chestSection.getString(chestLocation + ".world"));
+                for (String chestKey : chestSection.getKeys(false)) {
+                    int chestX = chestSection.getInt(chestKey + ".x");
+                    int chestY = chestSection.getInt(chestKey + ".y");
+                    int chestZ = chestSection.getInt(chestKey + ".z");
+                    World chestWorld = Bukkit.getWorld(chestSection.getString(chestKey + ".world"));
                     chestLocations.add(new Location(chestWorld, chestX, chestY, chestZ));
-                });
+                }
             }
-            List<MachineItem> stock = loadMachineStock("npcs." + npc);
+            List<MachineItem> stock = loadMachineStock("npcs." + npcKey);
             manager.loadNpc(location, gameProfile, chestLocations, stock);
-        });
+        }
     }
 
     public void deleteNPC(NPCShop shop) {
-        plugin.getNPCData().set("npcs." + shop.getNpc().getUniqueIDString(), null);
-        plugin.saveNPCData();
+        getNPCData().set("npcs." + shop.getNpc().getUniqueIDString(), null);
+        saveNPCData();
     }
 
     private List<MachineItem> loadMachineStock(String dataPath) {
-        FileConfiguration data = plugin.getNPCData();
+        FileConfiguration data = getNPCData();
         ConfigurationSection stockSection = data.getConfigurationSection(dataPath + ".stock");
         List<MachineItem> stock = new ArrayList<>();
         if (stockSection == null)
@@ -140,10 +142,16 @@ public class NPCDataManager {
             double price = data.getDouble(path + ".sell-price");
             int sellAmount = data.getInt(path + ".sell-amount");
             int stockAmount = data.getInt(path + ".stock-amount");
-
-            MachineItem machineItem = new MachineItem(item, sellAmount, price, stockAmount);
-            stock.add(machineItem);
+            stock.add(new MachineItem(item, sellAmount, price, stockAmount));
         });
         return stock;
+    }
+
+    private FileConfiguration getNPCData() {
+        return npcDataFile.getData();
+    }
+
+    private void saveNPCData() {
+        npcDataFile.saveData();
     }
 }

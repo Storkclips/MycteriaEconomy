@@ -1,7 +1,7 @@
 package me.wmorales01.mycteriaeconomy.listeners;
 
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-import me.wmorales01.mycteriaeconomy.customevents.RightClickNPCEvent;
+import me.wmorales01.mycteriaeconomy.events.RightClickNPCEvent;
 import me.wmorales01.mycteriaeconomy.models.NPCManager;
 import me.wmorales01.mycteriaeconomy.models.NPCShop;
 import me.wmorales01.mycteriaeconomy.models.NPCTool;
@@ -40,7 +40,7 @@ public class NPCShopHandler implements Listener {
         if (from.getX() == to.getX() && from.getY() == to.getY() && from.getZ() == to.getZ())
             return;
 
-        for (NPCShop shop : plugin.getNpcs()) {
+        for (NPCShop shop : plugin.getNpcShops()) {
             EntityPlayer npc = shop.getNpc();
             net.minecraft.server.v1_16_R3.PlayerConnection connection = ((CraftPlayer) player)
                     .getHandle().playerConnection;

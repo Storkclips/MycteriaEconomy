@@ -53,6 +53,29 @@ public abstract class Machine {
         this.chests = new ArrayList<>();
     }
 
+    public static Machine getMachineAtLocation(Location location) {
+        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
+        for (VendingMachine vendingMachine : plugin.getVendingMachines()) {
+            if (!location.equals(vendingMachine.getLocation()))
+                continue;
+
+            return vendingMachine;
+        }
+        for (TradingMachine tradingMachine : plugin.getTradingMachines()) {
+            if (!location.equals(tradingMachine.getLocation()))
+                continue;
+
+            return tradingMachine;
+        }
+        for (NPCShop npcShop : plugin.getNpcShops()) {
+            if (!location.equals(npcShop.getLocation()))
+                continue;
+
+            return npcShop;
+        }
+        return null;
+    }
+
     public abstract Inventory getSellingGUI();
 
     public abstract Inventory getOwnerGUI(Player player);
@@ -213,29 +236,6 @@ public abstract class Machine {
 
     public void removeStock(MachineItem machineItem) {
         configuredStock.remove(machineItem);
-    }
-
-    public static Machine getMachineAtLocation(Location location) {
-        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-        for (VendingMachine vendingMachine : plugin.getVendingMachines()) {
-            if (!location.equals(vendingMachine.getLocation()))
-                continue;
-
-            return vendingMachine;
-        }
-        for (TradingMachine tradingMachine : plugin.getTradingMachines()) {
-            if (!location.equals(tradingMachine.getLocation()))
-                continue;
-
-            return tradingMachine;
-        }
-        for (NPCShop npcShop : plugin.getNpcs()) {
-            if (!location.equals(npcShop.getLocation()))
-                continue;
-
-            return npcShop;
-        }
-        return null;
     }
 
     public UUID getOwnerUUID() {

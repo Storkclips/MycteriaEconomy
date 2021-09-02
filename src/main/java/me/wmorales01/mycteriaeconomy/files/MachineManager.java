@@ -1,7 +1,10 @@
 package me.wmorales01.mycteriaeconomy.files;
 
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-import me.wmorales01.mycteriaeconomy.models.*;
+import me.wmorales01.mycteriaeconomy.models.Machine;
+import me.wmorales01.mycteriaeconomy.models.MachineItem;
+import me.wmorales01.mycteriaeconomy.models.TradingMachine;
+import me.wmorales01.mycteriaeconomy.models.VendingMachine;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -32,54 +35,6 @@ public class MachineManager {
         loadATMs();
         loadMachines("vending-machines.");
         loadMachines("trading-machines.");
-    }
-
-    public void saveATMs() {
-        data = plugin.getMachineData();
-        if (plugin.getATMs().isEmpty())
-            return;
-
-        int var = 1;
-        for (ATM atm : plugin.getATMs()) {
-            Location atmLocation = atm.getLocation();
-
-            int x = (int) atmLocation.getX();
-            int y = (int) atmLocation.getY();
-            int z = (int) atmLocation.getZ();
-            String world = atmLocation.getWorld().getName();
-
-            data.set("atms." + var + ".x", x);
-            data.set("atms." + var + ".y", y);
-            data.set("atms." + var + ".z", z);
-            data.set("atms." + var + ".world", world);
-            var++;
-        }
-
-        plugin.saveMachineData();
-    }
-
-    public void loadATMs() {
-        data = plugin.getMachineData();
-        ConfigurationSection atmSection = data.getConfigurationSection("atms");
-
-        if (atmSection == null)
-            return;
-
-        atmSection.getKeys(false).forEach(atmKey -> {
-            String path = "atms." + atmKey;
-
-            int x = data.getInt(path + ".x");
-            int y = data.getInt(path + ".y");
-            int z = data.getInt(path + ".z");
-            World world = Bukkit.getWorld(data.getString(path + ".world"));
-
-            Location atmLocation = new Location(world, x, y, z);
-            ATM atm = new ATM(atmLocation);
-
-            plugin.getATMs().add(atm);
-        });
-        data.set("atms", null);
-        plugin.saveMachineData();
     }
 
     public void saveMachines(List<? extends Machine> machines, String path) {

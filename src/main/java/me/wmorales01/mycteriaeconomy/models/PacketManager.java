@@ -1,107 +1,104 @@
 package me.wmorales01.mycteriaeconomy.models;
 
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageDecoder;
+import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
+import me.wmorales01.mycteriaeconomy.events.RightClickNPCEvent;
+import net.minecraft.server.v1_16_R3.Packet;
+import net.minecraft.server.v1_16_R3.PacketPlayInUseEntity;
+import org.bukkit.Bukkit;
+import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
+import org.bukkit.entity.Player;
+
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.bukkit.Bukkit;
-import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
-import org.bukkit.entity.Player;
-
-import io.netty.channel.Channel;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.MessageToMessageDecoder;
-import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-import me.wmorales01.mycteriaeconomy.customevents.RightClickNPCEvent;
-import net.minecraft.server.v1_16_R3.Packet;
-import net.minecraft.server.v1_16_R3.PacketPlayInUseEntity;
-
 public class PacketManager {
-	private MycteriaEconomy plugin;
-	
-	public PacketManager(MycteriaEconomy instance) {
-		this.plugin = instance;
-	}
-	
-	Channel channel;
-	public static Map<UUID, Channel> channels = new HashMap<UUID, Channel>();
+    public static Map<UUID, Channel> channels = new HashMap<UUID, Channel>();
+    Channel channel;
+    private MycteriaEconomy plugin;
+    public PacketManager(MycteriaEconomy instance) {
+        this.plugin = instance;
+    }
 
-	public void injectPacket(Player player) {
-		CraftPlayer craftPlayer = (CraftPlayer) player;
-		channel = craftPlayer.getHandle().playerConnection.networkManager.channel;
-		channels.put(player.getUniqueId(), channel);
+    public void injectPacket(Player player) {
+        CraftPlayer craftPlayer = (CraftPlayer) player;
+        channel = craftPlayer.getHandle().playerConnection.networkManager.channel;
+        channels.put(player.getUniqueId(), channel);
 
-		if (channel.pipeline().get("PacketInjector") != null)
-			return;
+        if (channel.pipeline().get("PacketInjector") != null)
+            return;
 
-		channel.pipeline().addAfter("decoder", "PacketInjector", new MessageToMessageDecoder<PacketPlayInUseEntity>() {
+        channel.pipeline().addAfter("decoder", "PacketInjector", new MessageToMessageDecoder<PacketPlayInUseEntity>() {
 
-			@Override
-			protected void decode(ChannelHandlerContext channel, PacketPlayInUseEntity packet, List<Object> arg)
-					throws Exception {
-				arg.add(packet);
-				readPacket(player, packet);
-			}
-		});
-	}
+            @Override
+            protected void decode(ChannelHandlerContext channel, PacketPlayInUseEntity packet, List<Object> arg)
+                    throws Exception {
+                arg.add(packet);
+                readPacket(player, packet);
+            }
+        });
+    }
 
-	public void uninjectPacket(Player player) {
-		if (!channels.containsKey(player.getUniqueId()))
-			return;
+    public void uninjectPacket(Player player) {
+        if (!channels.containsKey(player.getUniqueId()))
+            return;
 
-		channel = channels.get(player.getUniqueId());
+        channel = channels.get(player.getUniqueId());
 
-		if (channel.pipeline().get("PacketInjector") != null)
-			channel.pipeline().remove("PacketInjector");
-	}
+        if (channel.pipeline().get("PacketInjector") != null)
+            channel.pipeline().remove("PacketInjector");
+    }
 
-	private void readPacket(Player player, Packet<?> packet) {
-		if (!packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayInUseEntity"))
-			return;
-		if (getValue(packet, "action").toString().equalsIgnoreCase("ATTACK"))
-			return;
-		if (getValue(packet, "d").toString().equalsIgnoreCase("OFF_HAND"))
-			return;
-		if (getValue(packet, "action").toString().equalsIgnoreCase("INTERACT_AT"))
-			return;
+    private void readPacket(Player player, Packet<?> packet) {
+        if (!packet.getClass().getSimpleName().equalsIgnoreCase("PacketPlayInUseEntity"))
+            return;
+        if (getValue(packet, "action").toString().equalsIgnoreCase("ATTACK"))
+            return;
+        if (getValue(packet, "d").toString().equalsIgnoreCase("OFF_HAND"))
+            return;
+        if (getValue(packet, "action").toString().equalsIgnoreCase("INTERACT_AT"))
+            return;
 
-		if (getValue(packet, "action").toString().equalsIgnoreCase("INTERACT")) {
+        if (getValue(packet, "action").toString().equalsIgnoreCase("INTERACT")) {
 
-			int id = (int) getValue(packet, "a");
+            int id = (int) getValue(packet, "a");
 
-			for (NPCShop npc : plugin.getNpcs()) {
-				if (npc.getNpc().getId() != id)
-					continue;
+            for (NPCShop npc : plugin.getNpcShops()) {
+                if (npc.getNpc().getId() != id)
+                    continue;
 
-				Bukkit.getScheduler().scheduleSyncDelayedTask(plugin,
-						new Runnable() {
+                Bukkit.getScheduler().scheduleSyncDelayedTask(plugin,
+                        new Runnable() {
 
-							@Override
-							public void run() {
-								Bukkit.getPluginManager().callEvent(new RightClickNPCEvent(player, npc.getNpc()));
-							}
-						}, 0);
-			}
-		}
-	}
+                            @Override
+                            public void run() {
+                                Bukkit.getPluginManager().callEvent(new RightClickNPCEvent(player, npc.getNpc()));
+                            }
+                        }, 0);
+            }
+        }
+    }
 
-	private Object getValue(Object instance, String name) {
-		Object result = null;
+    private Object getValue(Object instance, String name) {
+        Object result = null;
 
-		try {
-			Field field = instance.getClass().getDeclaredField(name);
+        try {
+            Field field = instance.getClass().getDeclaredField(name);
 
-			field.setAccessible(true);
+            field.setAccessible(true);
 
-			result = field.get(instance);
+            result = field.get(instance);
 
-			field.setAccessible(false);
+            field.setAccessible(false);
 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-		return result;
-	}
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
 }

@@ -1,109 +1,121 @@
 package me.wmorales01.mycteriaeconomy.models;
 
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.List;
-
+import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
+import me.wmorales01.mycteriaeconomy.files.ConfigManager;
+import me.wmorales01.mycteriaeconomy.inventories.ATMHolder;
+import me.wmorales01.mycteriaeconomy.util.GUIUtil;
+import me.wmorales01.mycteriaeconomy.util.StringUtil;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-import me.wmorales01.mycteriaeconomy.inventories.ATMHolder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.UUID;
 
 public class ATM {
-	private Location location;
-	
-	public ATM(Location location) {
-		this.location = location;
-	}
-	
-	public Location getLocation() {
-		return this.location;
-	}
-	
-	public static ATM getATM(Location location) {
-		MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-		
-		for (ATM atm : plugin.getATMs()) {
-			if (!atm.getLocation().equals(location))
-				continue;
-			
-			return atm;
-		}
-		
-		return null;
-	}
+    private final UUID uuid;
+    private final Location location;
 
-	public static ItemStack getATMItem() {
-		ItemStack atm = new ItemStack(Material.DISPENSER);
-		ItemMeta meta = atm.getItemMeta();
+    public ATM(Location location) {
+        this.uuid = UUID.randomUUID();
+        this.location = location;
+    }
 
-		meta.setDisplayName(ChatColor.YELLOW + "ATM");
-		List<String> lore = new ArrayList<String>();
-		lore.add(ChatColor.ITALIC + "" + ChatColor.GOLD + "Place it to install a new ATM");
-		meta.setLore(lore);
-		atm.setItemMeta(meta);
+    public ATM(UUID uuid, Location location) {
+        this.uuid = uuid;
+        this.location = location;
+    }
 
-		return atm;
-	}
-	
-	public static Inventory getWithdrawATMGUI(double balance) {
-		Inventory inventory = Bukkit.createInventory(new ATMHolder(), 36, "ATM");
+    public static ATM fromLocation(Location location) {
+        return MycteriaEconomy.getInstance().getAtms().get(location);
+    }
 
-		buildATMGUI(inventory, true, balance);
+    public static ItemStack getItemStack() {
+        ItemStack item = new ItemStack(Material.DISPENSER);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName(StringUtil.formatColor("&eATM"));
+        List<String> lore = new ArrayList<>();
+        lore.add(StringUtil.formatColor("&6&lPlace this block to install a new ATM"));
+        meta.setLore(lore);
+        item.setItemMeta(meta);
+        return item;
+    }
 
-		return inventory;
-	}
+    public void registerATM() {
+        MycteriaEconomy.getInstance().getAtms().put(location, this);
+        saveATMData();
+    }
 
-	private static void setATMItem(ItemStack item, String name, String loreLine, Inventory inventory, int slot) {
-		ItemMeta meta = item.getItemMeta();
+    public void unregisterATM() {
+        MycteriaEconomy plugin = MycteriaEconomy.getInstance();
+        plugin.getAtms().remove(location);
+        plugin.getAtmManager().deleteATM(this);
+    }
 
-		meta.setDisplayName(ChatColor.translateAlternateColorCodes('&', name));
-		List<String> lore = new ArrayList<String>();
-		lore.add(ChatColor.translateAlternateColorCodes('&', loreLine));
-		meta.setLore(lore);
-		item.setItemMeta(meta);
+    private void saveATMData() {
+        MycteriaEconomy.getInstance().getAtmManager().saveATM(this);
+    }
 
-		inventory.setItem(slot, item);
-	}
+    public Inventory getWithdrawATMGUI(double balance) {
+        Inventory inventory = Bukkit.createInventory(new ATMHolder(), 36, "ATM");
+        GUIUtil.setFrame(inventory, Material.LIME_STAINED_GLASS_PANE);
+        // Filling slot 10 and 16
+        ItemStack filler = GUIUtil.getFiller(Material.LIME_STAINED_GLASS_PANE);
+        inventory.setItem(10, filler);
+        inventory.setItem(16, filler);
+        addEconomyItems(inventory);
+        addBalanceItem(inventory, balance);
+        addGuideItem(inventory);
+        addFeeItem(inventory);
+        return inventory;
+    }
 
-	private static void buildATMGUI(Inventory inventory, boolean isWithdrawOperation, double balance) {
-		EconomyItems ecoItems = new EconomyItems();
-		if (isWithdrawOperation) {
-			setATMItem(ecoItems.oneDollarBill(), "&r&aWithdraw 1$", "&6Click to withdraw.", inventory, 2);
-			setATMItem(ecoItems.fiveDollarBill(), "&r&aWithdraw 5$", "&6Click to withdraw.", inventory, 3);
-			setATMItem(ecoItems.tenDollarBill(), "&r&aWithdraw 10$", "&6Click to withdraw.", inventory, 4);
-			setATMItem(ecoItems.twentyDollarBill(), "&r&aWithdraw 20$", "&6Click to withdraw.", inventory, 5);
-			setATMItem(ecoItems.fiftyDollarBill(), "&r&aWithdraw 50$", "&6Click to withdraw.", inventory, 6);
-			setATMItem(ecoItems.oneHundredDollarBill(), "&r&aWithdraw 100$", "&6Click to withdraw.", inventory, 13);
-			setATMItem(ecoItems.oneCentCoin(), "&r&aWithdraw 0.01$", "&6Click to withdraw.", inventory, 11);
-			setATMItem(ecoItems.fiveCentCoin(), "&r&aWithdraw 0.05$", "&6Click to withdraw.", inventory, 12);
-			setATMItem(ecoItems.tenCentCoin(), "&r&aWithdraw 0.10$", "&6Click to withdraw.", inventory, 14);
-			setATMItem(ecoItems.twentyFiveCentCoin(), "&r&aWithdraw 0.25$", "&6Click to withdraw.", inventory, 15);
-		} else {
-			setATMItem(ecoItems.oneDollarBill(), "&r&aDeposit 1$", "&6Click to deposit.", inventory, 2);
-			setATMItem(ecoItems.fiveDollarBill(), "&r&aDeposit 5$", "&6Click to deposit.", inventory, 3);
-			setATMItem(ecoItems.tenDollarBill(), "&r&aDeposit 10$", "&6Click to deposit.", inventory, 4);
-			setATMItem(ecoItems.twentyDollarBill(), "&r&aDeposit 20$", "&6Click to deposit.", inventory, 5);
-			setATMItem(ecoItems.fiftyDollarBill(), "&r&aDeposit 50$", "&6Click to deposit.", inventory, 6);
-			setATMItem(ecoItems.oneHundredDollarBill(), "&r&aDeposit 100$", "&6Click to deposit.", inventory, 13);
-			setATMItem(ecoItems.oneCentCoin(), "&r&aDeposit 0.01$", "&6Click to deposit.", inventory, 11);
-			setATMItem(ecoItems.fiveCentCoin(), "&r&aDeposit 0.05$", "&6Click to deposit.", inventory, 12);
-			setATMItem(ecoItems.tenCentCoin(), "&r&aDeposit 0.10$", "&6Click to deposit.", inventory, 14);
-			setATMItem(ecoItems.twentyFiveCentCoin(), "&r&aDeposit 0.25$", "&6Click to deposit.", inventory, 15);
-		}
-		ItemStack info = new ItemStack(Material.PAPER);
-		setATMItem(info, "&r&aDeposit Info",
-				"&6You can click a bill or coin from your inventory to deposit it into your account.", inventory, 21);
+    private void addEconomyItems(Inventory inventory) {
+        for (ItemStack economyItem : EconomyItem.getEconomyItems()) {
+            inventory.addItem(getATMItem(economyItem));
+        }
+    }
 
-		DecimalFormat format = new DecimalFormat("###.##");
-		setATMItem(new ItemStack(Material.SUNFLOWER), "&r&eBalance:", "&6&l" + format.format(balance) + "$", inventory,
-				22);
-		setATMItem(new ItemStack(Material.BLAZE_POWDER), "&r&cTransfaction Fee:", "&c&l1$", inventory, 23);
-	}
+    private ItemStack getATMItem(ItemStack economyItem) {
+        ItemMeta meta = economyItem.getItemMeta();
+        meta.setDisplayName(StringUtil.formatColor("&2&l$" +
+                StringUtil.roundNumber(EconomyItem.getValueFromItem(economyItem), 2)));
+        meta.setLore(Arrays.asList(StringUtil.formatColor("&eClick here to withdraw.")));
+        economyItem.setItemMeta(meta);
+        return economyItem;
+    }
+
+    private void addBalanceItem(Inventory inventory, double balance) {
+        ItemStack balanceItem = GUIUtil.getGUIItem(Material.SUNFLOWER,
+                StringUtil.formatColor("&aBalance: &a&l" + StringUtil.roundNumber(balance, 2)), null);
+        inventory.setItem(30, balanceItem);
+    }
+
+    private void addGuideItem(Inventory inventory) {
+        List<String> lore = new ArrayList<>();
+        lore.add("&eYou can click a bill or coin from your");
+        lore.add("&einventory to deposit it into your balance.");
+        ItemStack guideItem = GUIUtil.getGUIItem(Material.COMPASS, "&2Information", lore);
+        inventory.setItem(31, guideItem);
+    }
+
+    private void addFeeItem(Inventory inventory) {
+        double transactionFee = ConfigManager.getAtmTranstacionFee();
+        ItemStack feeItem = GUIUtil.getGUIItem(Material.BLAZE_POWDER, "&eTransaction Fee: ",
+                Arrays.asList("&c &l$" + StringUtil.roundNumber(transactionFee, 2)));
+        inventory.setItem(32, feeItem);
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public Location getLocation() {
+        return this.location;
+    }
 }

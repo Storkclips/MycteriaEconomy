@@ -61,7 +61,7 @@ public class NPCManager {
 
         NPCShop shop = new NPCShop(npc);
         addNpcPacket(npc);
-        plugin.getNpcs().add(shop);
+        plugin.getNpcShops().add(shop);
         plugin.getNpcDataManager().saveNPC(shop);
     }
 
@@ -73,7 +73,7 @@ public class NPCManager {
         }
         if (deleteData) {
             plugin.getNpcDataManager().deleteNPC(shop);
-            plugin.getNpcs().remove(shop);
+            plugin.getNpcShops().remove(shop);
         }
     }
 
@@ -88,7 +88,7 @@ public class NPCManager {
         // Setting Position and Properties
         npc.setLocation(location.getX(), location.getY(), location.getZ(), location.getYaw(), location.getPitch());
         addNpcPacket(npc);
-        plugin.getNpcs().add(new NPCShop(npc, chestLocations, machineItems));
+        plugin.getNpcShops().add(new NPCShop(npc, chestLocations, machineItems));
     }
 
     private void addNpcPacket(EntityPlayer npc) {
@@ -103,7 +103,7 @@ public class NPCManager {
 
     public void addJoinPacket(Player player) {
         PlayerConnection connection = ((CraftPlayer) player).getHandle().playerConnection;
-        for (NPCShop npc : plugin.getNpcs()) {
+        for (NPCShop npc : plugin.getNpcShops()) {
             if (!player.getWorld().equals(npc.getNpc().getBukkitEntity().getWorld()))
                 continue;
 

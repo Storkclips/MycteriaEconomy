@@ -7,7 +7,7 @@ import org.bukkit.Location;
 import java.util.List;
 
 public class NPCShop extends VendingMachine {
-    private EntityPlayer npc;
+    private final EntityPlayer npc;
 
     public NPCShop(EntityPlayer npc) {
         super(npc.getBukkitEntity().getLocation());
@@ -20,7 +20,7 @@ public class NPCShop extends VendingMachine {
     }
 
     public static NPCShop getByEntityPlayer(EntityPlayer npc) {
-        for (NPCShop npcShop : MycteriaEconomy.getInstance().getNpcs()) {
+        for (NPCShop npcShop : MycteriaEconomy.getInstance().getNpcShops()) {
             if (!npcShop.getNpc().equals(npc))
                 continue;
 
