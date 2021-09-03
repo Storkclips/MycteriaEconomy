@@ -1,172 +1,130 @@
 package me.wmorales01.mycteriaeconomy.listeners;
 
-import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import me.wmorales01.mycteriaeconomy.inventories.WalletHolder;
+import me.wmorales01.mycteriaeconomy.models.EconomyItem;
 import me.wmorales01.mycteriaeconomy.models.Wallet;
-import me.wmorales01.mycteriaeconomy.util.BalanceManager;
-import me.wmorales01.mycteriaeconomy.util.Checker;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
+import me.wmorales01.mycteriaeconomy.util.WalletUtil;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.inventory.*;
+import org.bukkit.event.player.PlayerInteractEntityEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.inventory.CraftingInventory;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.PlayerInventory;
 
-import java.util.UUID;
+import java.util.Collection;
 
 public class WalletHandler implements Listener {
-    private MycteriaEconomy plugin;
 
-    public WalletHandler(MycteriaEconomy instance) {
-        plugin = instance;
-    }
-
+    // Listens when a player prepares the craft of a recipe, if the recipe equals the Wallet craft recipe then
+    // don't do anything. If the bill from the recipe is different from a one dollar bill then cancel the craft
     @EventHandler
-    public void onWalletCraft(InventoryClickEvent event) {
-        if (event.getInventory() == null || event.getClickedInventory() == null)
-            return;
+    public void onWalletCraft(PrepareItemCraftEvent event) {
+        if (event.getRecipe() == null) return;
+        ItemStack result = event.getRecipe().getResult();
+        if (!WalletUtil.isWallet(result)) return;
 
-        if (event.getClickedInventory().getType() != InventoryType.WORKBENCH)
-            return;
+        ItemStack[] craftMatrix = event.getInventory().getMatrix();
+        ItemStack bill = craftMatrix[4];
+        if (EconomyItem.isEconomyItem(bill) && EconomyItem.getValueFromItem(bill) == 1) return;
 
-        CraftingInventory inventory = (CraftingInventory) event.getClickedInventory();
-        ItemStack result = inventory.getResult();
-        if (result == null)
-            return;
-        if (!result.hasItemMeta())
-            return;
-        if (!result.getItemMeta().hasLore())
-            return;
-        if (!result.getItemMeta().hasCustomModelData())
-            return;
-        if (!result.getItemMeta().getDisplayName().contains("Wallet"))
-            return;
-
-        Wallet wallet = new Wallet();
-        inventory.setResult(wallet.getItemStack());
-        plugin.addWallet(wallet);
+        event.getInventory().setResult(null);
     }
 
+    // Listens when a player right clicks and calls the attemptWalletOpen event
     @EventHandler
     public void onWalletRightClick(PlayerInteractEvent event) {
-        Action action = event.getAction();
-        if (!action.equals(Action.RIGHT_CLICK_AIR) && !action.equals(Action.RIGHT_CLICK_BLOCK))
-            return;
+        if (!event.getAction().name().contains("RIGHT_CLICK")) return;
 
-        Player player = event.getPlayer();
-        ItemStack handItem = player.getInventory().getItem(event.getHand());
-
-        if (!handItem.hasItemMeta())
-            return;
-        if (!handItem.getItemMeta().hasLore())
-            return;
-        if (!handItem.getItemMeta().hasDisplayName())
-            return;
-        if (!handItem.getItemMeta().getDisplayName().equals("Wallet"))
-            return;
-
-        Wallet wallet = Wallet.getByItemStack(handItem);
-        if (wallet == null)
-            return;
-
-        Location playerLocation = player.getLocation();
-        ItemMeta meta = handItem.getItemMeta();
-        if (wallet.getBalance() == 0)
-            meta.setCustomModelData(104); // Empty wallet
-        else
-            meta.setCustomModelData(105); // Filled wallet
-        handItem.setItemMeta(meta);
-
-        playerLocation.getWorld().playSound(playerLocation, Sound.ITEM_ARMOR_EQUIP_LEATHER, 1, 2);
-        plugin.getOpenWallets().put(player.getUniqueId(), wallet);
-        player.openInventory(wallet.getWalletGUI());
+        attemptWalletOpen(event.getPlayer(), event.getItem(), event);
     }
 
+    // Idem, with the difference that it listens when a player right clicks an entity
     @EventHandler
-    public void onGUIClick(InventoryClickEvent event) {
-        if (event.getInventory() == null)
-            return;
-        if (event.getClickedInventory() == null)
-            return;
-        if (!(event.getInventory().getHolder() instanceof WalletHolder))
-            return;
+    public void onPlayerRightClickEntity(PlayerInteractEntityEvent event) {
+        Player player = event.getPlayer();
+        ItemStack usedItem = player.getInventory().getItem(event.getHand());
+        attemptWalletOpen(player, usedItem, event);
+    }
+
+    // If the passed used item is a Wallet then open its corresponding GUI
+    private void attemptWalletOpen(Player player, ItemStack usedItem, Cancellable event) {
+        Wallet wallet = Wallet.fromItemStack(usedItem);
+        if (wallet == null) return; // usedItem isn't wallet
+
+        event.setCancelled(true);
+        player.openInventory(wallet.getGUI());
+    }
+
+    // Listens when a player clicks a GUI, if it is a Wallet GUI and the player is saving an item other than an
+    // economy item then cancel the event
+    @EventHandler
+    public void onWalletGUIClick(InventoryClickEvent event) {
+        Inventory clickedInventory = event.getClickedInventory();
+        if (clickedInventory == null) return;
+        if (!(event.getInventory().getHolder() instanceof WalletHolder)) return;
 
         Player player = (Player) event.getWhoClicked();
-        Inventory clickedInventory = event.getClickedInventory();
-        ClickType click = event.getClick();
-
-        if (clickedInventory.getHolder() instanceof WalletHolder) {
-            if (!click.isKeyboardClick()) {
-                ItemStack placedItem = player.getItemOnCursor();
-                if (placedItem == null || placedItem.getType() == Material.AIR)
-                    return;
-                cancelIfIsntBill(placedItem, player, event);
-
-            } else if (click.isKeyboardClick() && event.getHotbarButton() != -1) {
-                ItemStack clickedItem = player.getInventory().getItem(event.getHotbarButton());
-                cancelIfIsntBill(clickedItem, player, event);
+        ClickType clickType = event.getClick();
+        ItemStack savedItem;
+        if (clickedInventory.getType() == InventoryType.CHEST) { // Clicked wallet GUI
+            if (clickType.isKeyboardClick() && event.getHotbarButton() != -1) {
+                savedItem = player.getInventory().getItem(event.getHotbarButton());
+            } else {
+                savedItem = player.getItemOnCursor();
             }
         } else {
-            ItemStack clickedItem = event.getCurrentItem();
-            if (clickedItem == null)
-                return;
-            if (Checker.isBill(clickedItem) || Checker.isCoin(clickedItem))
-                return;
+            if (!clickType.isShiftClick()) return;
 
-            event.setCancelled(true);
-            player.updateInventory();
+            savedItem = event.getCurrentItem();
         }
-    }
-
-    @EventHandler
-    public void onWalletClose(InventoryCloseEvent event) {
-        Inventory inventory = event.getInventory();
-        if (!(inventory.getHolder() instanceof WalletHolder))
-            return;
-
-        Player player = (Player) event.getPlayer();
-        UUID uuid = player.getUniqueId();
-        ItemStack[] walletContent = inventory.getContents();
-        Wallet wallet = plugin.getOpenWallets().get(uuid);
-        double balance = BalanceManager.getBalanceFromInventory(inventory);
-        wallet.getContent().setContents(walletContent);
-        wallet.setBalance(balance);
-        for (int i = 0; i < player.getInventory().getContents().length; i++) {
-            ItemStack item = player.getInventory().getContents()[i];
-            if (item == null)
-                continue;
-            if (!wallet.isSimilar(item))
-                continue;
-
-            player.getInventory().setItem(i, wallet.getItemStack());
-        }
-        plugin.getOpenWallets().remove(uuid);
-        Bukkit.getScheduler().runTaskLater(plugin, () -> {
-            player.updateInventory();
-        }, 1);
-    }
-
-    private void cancelIfIsntBill(ItemStack clickedItem, Player player, InventoryClickEvent event) {
-        if (clickedItem == null)
-            return;
-        if (Checker.isBill(clickedItem))
-            return;
-        if (Checker.isCoin(clickedItem))
-            return;
+        if (EconomyItem.isEconomyItem(savedItem)) return;
 
         event.setCancelled(true);
         player.updateInventory();
     }
 
+    // Listens when a player drags an item into an inventory, if the inventory is a Wallet GUI and one of the
+    // dragged items isn't an Economy Item then cancel the event
+    @EventHandler
+    public void onWalletGUIDrag(InventoryDragEvent event) {
+        if ((event.getInventory().getHolder() instanceof WalletHolder)) return;
+        boolean draggedIntoWallet = false;
+        for (int slot : event.getRawSlots()) {
+            if (slot > 35) continue;
+
+            draggedIntoWallet = true;
+        }
+        if (!draggedIntoWallet) return;
+        Collection<ItemStack> draggedItems = event.getNewItems().values();
+        for (ItemStack item : draggedItems) {
+            if (EconomyItem.isEconomyItem(item)) continue;
+
+            event.setCancelled(true);
+            return;
+        }
+    }
+
+    // Listens when a player closes an Inventory, if it is a Wallet inventory the update the wallet's ItemStack
+    @EventHandler
+    public void onWalletClose(InventoryCloseEvent event) {
+        Inventory inventory = event.getInventory();
+        if (!(inventory.getHolder() instanceof WalletHolder)) return;
+
+        Player player = (Player) event.getPlayer();
+        Wallet openWallet = ((WalletHolder) inventory.getHolder()).getWallet();
+        openWallet.computeWalletBalance();
+        // Update wallet ItemStack from the player inventory
+        PlayerInventory playerInventory = player.getInventory();
+        for (int inventorySlot = 0; inventorySlot < playerInventory.getSize(); inventorySlot++) {
+            ItemStack item = playerInventory.getItem(inventorySlot);
+            if (!openWallet.isSimilar(item)) continue;
+
+            playerInventory.setItem(inventorySlot, openWallet.getItemStack());
+        }
+        player.updateInventory();
+    }
 }

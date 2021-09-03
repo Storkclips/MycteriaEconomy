@@ -2,7 +2,7 @@ package me.wmorales01.mycteriaeconomy.models;
 
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import me.wmorales01.mycteriaeconomy.inventories.MachineHolder;
-import me.wmorales01.mycteriaeconomy.util.BalanceManager;
+import me.wmorales01.mycteriaeconomy.util.BalanceUtil;
 import me.wmorales01.mycteriaeconomy.util.Framer;
 import me.wmorales01.mycteriaeconomy.util.Messager;
 import org.bukkit.Bukkit;
@@ -79,7 +79,7 @@ public class VendingMachine extends Machine {
 
     public void withdrawProfit() {
         Player player = Bukkit.getPlayer(getOwnerUUID());
-        BalanceManager.giveBalance(player, profit);
+        BalanceUtil.giveBalance(player, profit);
         DecimalFormat format = new DecimalFormat("#.##");
         Messager.sendMessage(player, "&aYou received &e&l" + format.format(profit) + "$ &afrom this " +
                 "Vending Machine.");

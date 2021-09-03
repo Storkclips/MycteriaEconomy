@@ -130,11 +130,11 @@ public class MachineHandler implements Listener {
 
         } else { // Buyer actions
             int walletSlot = machine instanceof VendingMachine ? 48 : 50;
-            Wallet wallet = Wallet.getByItemStack(inventory.getItem(walletSlot));
+            Wallet wallet = Wallet.fromItemStack(inventory.getItem(walletSlot));
             if (clickedInventory.getType() == InventoryType.PLAYER && wallet == null) {
                 // Adding wallet to machine slot
                 ItemStack clickedItem = event.getCurrentItem();
-                wallet = Wallet.getByItemStack(clickedItem);
+                wallet = Wallet.fromItemStack(clickedItem);
                 if (wallet == null) {
                     event.setCancelled(true);
                     return;
@@ -233,7 +233,7 @@ public class MachineHandler implements Listener {
                 continue;
             blockLocation.getWorld().dropItemNaturally(blockLocation, drop);
         }
-        for (ItemStack item : BalanceManager.getBalanceItems(balance))
+        for (ItemStack item : BalanceUtil.balanceToCurrency(balance))
             blockLocation.getWorld().dropItemNaturally(blockLocation, item);
     }
 
@@ -343,7 +343,7 @@ public class MachineHandler implements Listener {
             return;
         }
         Inventory inventory = event.getInventory();
-        Wallet wallet = Wallet.getByItemStack(inventory.getItem(50));
+        Wallet wallet = Wallet.fromItemStack(inventory.getItem(50));
         if (wallet == null) {
             Messager.sendErrorMessage(player, "&cYou must put a wallet on the machine for it to work.");
             return;
@@ -355,7 +355,7 @@ public class MachineHandler implements Listener {
         clickedInventory.setItem(event.getSlot(), machineItem.getSellItem(false));
 
         // Giving buy money
-        wallet.increaseBalance(buyPrice);
+        wallet.increaseWalletBalance(buyPrice);
         inventory.setItem(50, null);
         Inventory newGUI = machine.getSellingGUI();
         newGUI.setItem(50, wallet.getItemStack());
@@ -371,7 +371,7 @@ public class MachineHandler implements Listener {
 
     private void buyItem(Player player, MachineHolder holder, VendingMachine machine, InventoryClickEvent event) {
         Inventory inventory = event.getInventory();
-        Wallet wallet = Wallet.getByItemStack(inventory.getItem(48));
+        Wallet wallet = Wallet.fromItemStack(inventory.getItem(48));
         Inventory clickedInventory = event.getClickedInventory();
         Location machineLocation = machine.getLocation();
         ItemStack clickedItem = event.getCurrentItem();

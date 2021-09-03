@@ -5,34 +5,37 @@ import me.wmorales01.mycteriaeconomy.inventories.ATMHolder;
 import me.wmorales01.mycteriaeconomy.models.ATM;
 import me.wmorales01.mycteriaeconomy.models.EconomyItem;
 import me.wmorales01.mycteriaeconomy.models.EconomyPlayer;
-import me.wmorales01.mycteriaeconomy.util.Checker;
-import me.wmorales01.mycteriaeconomy.util.Getter;
 import me.wmorales01.mycteriaeconomy.util.Messager;
-import org.bukkit.ChatColor;
+import me.wmorales01.mycteriaeconomy.util.SFXManager;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.Sound;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
+import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
 
-import java.text.DecimalFormat;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 public class ATMHandler implements Listener {
     private final MycteriaEconomy plugin;
+    // Stores the players that were asked for confirmation to break an ATM
+    private final Set<Player> atmBreakConfirmations;
 
     public ATMHandler(MycteriaEconomy plugin) {
         this.plugin = plugin;
+        this.atmBreakConfirmations = new HashSet<>();
     }
 
     // Listens when a player places a block, if the placed ItemStack is an ATM then it creates a new ATM on that
@@ -49,7 +52,7 @@ public class ATMHandler implements Listener {
         }
         Location location = event.getBlockPlaced().getLocation();
         new ATM(location).registerATM();
-        location.getWorld().playSound(location, Sound.BLOCK_NOTE_BLOCK_BIT, 1, 5);
+        SFXManager.playWorldSound(location, Sound.BLOCK_NOTE_BLOCK_BIT, 0.6F, 1.8F);
     }
 
     // Listens when a player right clicks a block, if it is a registered ATM then open the ATM GUI
@@ -58,6 +61,7 @@ public class ATMHandler implements Listener {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
         Block rightClickedBlock = event.getClickedBlock();
         if (rightClickedBlock.getType() != Material.DISPENSER) return;
+
         Location blockLocation = rightClickedBlock.getLocation();
         ATM atm = ATM.fromLocation(blockLocation);
         if (atm == null) return;
@@ -65,7 +69,7 @@ public class ATMHandler implements Listener {
         event.setCancelled(true);
         Player player = event.getPlayer();
         EconomyPlayer economyPlayer = EconomyPlayer.fromPlayer(player);
-        event.getPlayer().openInventory(ATM.getWithdrawATMGUI(economyPlayer.getBankBalance()));
+        event.getPlayer().openInventory(atm.getWithdrawATMGUI(economyPlayer));
     }
 
     // Listens when a player clicks an inventory, if it is an ATM GUI then handle it according to the executed
@@ -79,121 +83,81 @@ public class ATMHandler implements Listener {
         Player player = (Player) event.getWhoClicked();
         ItemStack clickedItem = event.getCurrentItem();
         EconomyPlayer economyPlayer = EconomyPlayer.fromPlayer(player);
-        Inventory inventory = event.getClickedInventory();
+        Inventory clickedInventory = event.getClickedInventory();
+        ATM atm = ((ATMHolder) event.getInventory().getHolder()).getAtm();
         if (clickedItem == null) return;
-
-        if (event.getClickedInventory().getType() != InventoryType.PLAYER) {
-            if (clickedItem.getItemMeta().hasCustomModelData()) {
-                int modelData = clickedItem.getItemMeta().getCustomModelData();
-                EconomyItem items = new EconomyItem();
-
-                if (clickedItem.getType() == Material.PAPER) {
-                    switch (modelData) {
-                        case 101:
-                            executeWithdraw(economyPlayer, inventory, 1, items.oneDollarBill());
-                            break;
-
-                        case 102:
-                            executeWithdraw(economyPlayer, inventory, 5, items.fiveDollarBill());
-                            break;
-
-                        case 103:
-                            executeWithdraw(economyPlayer, inventory, 10, items.tenDollarBill());
-                            break;
-
-                        case 104:
-                            executeWithdraw(economyPlayer, inventory, 20, items.twentyDollarBill());
-                            break;
-
-                        case 105:
-                            executeWithdraw(economyPlayer, inventory, 50, items.fiftyDollarBill());
-                            break;
-
-                        case 106:
-                            executeWithdraw(economyPlayer, inventory, 100, items.oneHundredDollarBill());
-                            break;
-
-                        default:
-                            break;
-                    }
-                } else if (clickedItem.getType() == Material.IRON_NUGGET) {
-                    switch (modelData) {
-                        case 101:
-                            executeWithdraw(economyPlayer, inventory, 0.01, items.oneCentCoin());
-                            break;
-
-                        case 102:
-                            executeWithdraw(economyPlayer, inventory, 0.05, items.fiveCentCoin());
-                            break;
-
-                        case 103:
-                            executeWithdraw(economyPlayer, inventory, 0.10, items.tenCentCoin());
-                            break;
-
-                        case 104:
-                            executeWithdraw(economyPlayer, inventory, 0.25, items.twentyFiveCentCoin());
-                            break;
-                    }
-                }
-            }
-
+        if (!EconomyItem.isEconomyItem(clickedItem)) return;
+        if (clickedInventory.getType() == InventoryType.CHEST) { // Is withdrawing money
+            withdrawBankBalance(atm, economyPlayer, clickedItem);
         } else {
-            if (!Checker.isBill(clickedItem) && !Checker.isCoin(clickedItem))
-                return;
-
-            executeDeposit(economyPlayer, clickedItem, event.getInventory().getItem(22));
-            player.getInventory().setItem(event.getSlot(), null);
+            depositBankBalance(atm, economyPlayer, clickedItem);
         }
     }
 
-    private void executeWithdraw(EconomyPlayer ecoPlayer, Inventory inventory, double transactionValue,
-                                 ItemStack item) {
-        Player player = ecoPlayer.getPlayer();
-
-        if (ecoPlayer.getBankBalance() - transactionValue <= 0) {
-            Messager.sendMessage(player, "&cYou don't have enough bank balance to execute this transaction.");
+    // Withdraws the value of the passed economyItem from the passed economyPlayer's bank balance (if possible)
+    // and reopens the passed atm's GUI
+    private void withdrawBankBalance(ATM atm, EconomyPlayer economyPlayer, ItemStack economyItem) {
+        Player player = economyPlayer.getPlayer();
+        double withdrawValue = EconomyItem.getValueFromItem(economyItem);
+        if (economyPlayer.getBankBalance() - withdrawValue <= 0) {
+            Messager.sendErrorMessage(player, "&cYou don't have enough bank balance to execute this transaction.");
             return;
         }
-        ecoPlayer.removeBankBalance(transactionValue);
+        economyPlayer.decreaseBankBalance(withdrawValue);
         Location playerLocation = player.getLocation();
-
-        if (player.getInventory().firstEmpty() == -1)
-            playerLocation.getWorld().dropItemNaturally(playerLocation, item);
-        else
-            player.getInventory().addItem(item);
-
-        playerLocation.getWorld().playSound(playerLocation, Sound.BLOCK_NOTE_BLOCK_BIT, 1, 1);
-
-        ItemStack balanceItem = inventory.getItem(22);
-        updateBalanceItem(ecoPlayer, balanceItem);
+        if (player.getInventory().firstEmpty() == -1) {
+            playerLocation.getWorld().dropItemNaturally(playerLocation, economyItem);
+        } else {
+            player.getInventory().addItem(economyItem);
+        }
+        SFXManager.playWorldSound(playerLocation, Sound.BLOCK_NOTE_BLOCK_BIT, 0.7F, 1.3F);
+        player.openInventory(atm.getWithdrawATMGUI(economyPlayer));
     }
 
-    private void executeDeposit(EconomyPlayer ecoPlayer, ItemStack economyItem, ItemStack balanceItem) {
-        double value = 0;
-        if (Checker.isBill(economyItem))
-            value = Getter.getValueFromBill(economyItem);
-        else if (Checker.isCoin(economyItem))
-            value = Getter.getValueFromCoin(economyItem);
+    // Deposit the passed balanceItem's value to the passed economyPlayer's bank account and reopens the
+    // passed atm's GUI after deleting the clicked economyItem
+    private void depositBankBalance(ATM atm, EconomyPlayer economyPlayer, ItemStack economyItem) {
+        double depositValue = EconomyItem.getValueFromItem(economyItem);
+        economyPlayer.increaseBankBalance(depositValue);
+        economyItem.setAmount(0);
 
-        if (value == 0)
+        Player player = economyPlayer.getPlayer();
+        player.openInventory(atm.getWithdrawATMGUI(economyPlayer));
+        SFXManager.playWorldSound(player.getLocation(), Sound.BLOCK_NOTE_BLOCK_BIT, 0.7F, 1.3F);
+    }
+
+    // Listens when a player breaks a block, if the block is an ATM and the player has the required permissions
+    // then call the destroyATM method
+    @EventHandler
+    public void onATMBreak(BlockBreakEvent event) {
+        if (event.isCancelled()) return;
+
+        Player player = event.getPlayer();
+        Block block = event.getBlock();
+        Location blockLocation = block.getLocation();
+        ATM atm = ATM.fromLocation(blockLocation);
+        if (atm == null) return;
+        if (!player.hasPermission("economyplugin.createatm")) {
+            Messager.sendNoPermissionMessage(player);
             return;
-
-        ecoPlayer.addBankBalance(value);
-        Player player = ecoPlayer.getPlayer();
-        Location playerLocation = player.getLocation();
-        updateBalanceItem(ecoPlayer, balanceItem);
-
-        playerLocation.getWorld().playSound(playerLocation, Sound.BLOCK_NOTE_BLOCK_BIT, 1, 1);
-
+        }
+        destroyATM(player, atm, event);
     }
 
-    private void updateBalanceItem(EconomyPlayer ecoPlayer, ItemStack balanceItem) {
-        ItemMeta meta = balanceItem.getItemMeta();
-        List<String> lore = meta.getLore();
-        lore.clear();
-        DecimalFormat format = new DecimalFormat("###.##");
-        lore.add(ChatColor.translateAlternateColorCodes('&', "&6&l" + format.format(ecoPlayer.getBankBalance()) + "$"));
-        meta.setLore(lore);
-        balanceItem.setItemMeta(meta);
+    // Attemps to destroy the passed ATM, if the player hasn't been asked, ask for confirmation to delete the
+    // ATM, if the player has been asked then destroy the ATM block and remove the ATM from the local database
+    private void destroyATM(Player player, ATM atm, Cancellable event) {
+        if (!atmBreakConfirmations.contains(player)) {
+            event.setCancelled(true);
+            atmBreakConfirmations.add(player);
+            Bukkit.getScheduler().runTaskLater(plugin, () -> atmBreakConfirmations.remove(player), 100L);
+            Messager.sendMessage(player, "&6Break the ATM again to confirm its deletion.");
+            SFXManager.playPlayerSound(player, Sound.UI_BUTTON_CLICK, 0.8F, 1.3F);
+            return;
+        }
+        atmBreakConfirmations.remove(player);
+        atm.unregisterATM();
+        SFXManager.playWorldSound(atm.getLocation(), Sound.BLOCK_BEACON_DEACTIVATE, 0.7F, 1.8F);
+        Messager.sendMessage(player, "&aATM successfully deleted.");
     }
 }

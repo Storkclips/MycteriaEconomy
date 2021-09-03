@@ -61,15 +61,15 @@ public class ATM {
         MycteriaEconomy.getInstance().getAtmManager().saveATM(this);
     }
 
-    public Inventory getWithdrawATMGUI(double balance) {
-        Inventory inventory = Bukkit.createInventory(new ATMHolder(), 36, "ATM");
+    public Inventory getWithdrawATMGUI(EconomyPlayer economyPlayer) {
+        Inventory inventory = Bukkit.createInventory(new ATMHolder(this), 36, "ATM");
         GUIUtil.setFrame(inventory, Material.LIME_STAINED_GLASS_PANE);
         // Filling slot 10 and 16
         ItemStack filler = GUIUtil.getFiller(Material.LIME_STAINED_GLASS_PANE);
         inventory.setItem(10, filler);
         inventory.setItem(16, filler);
         addEconomyItems(inventory);
-        addBalanceItem(inventory, balance);
+        addBalanceItem(inventory, economyPlayer.getBankBalance());
         addGuideItem(inventory);
         addFeeItem(inventory);
         return inventory;

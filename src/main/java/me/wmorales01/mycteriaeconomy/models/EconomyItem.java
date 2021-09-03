@@ -142,4 +142,29 @@ public class EconomyItem {
 
         return economyItem.getItemMeta().getPersistentDataContainer().get(VALUE_KEY, PersistentDataType.DOUBLE);
     }
+
+    public static ItemStack getItemFromValue(double value) {
+        if (value == 100) {
+            return oneHundredDollarBill();
+        } else if (value == 50) {
+            return fiftyDollarBill();
+        } else if (value == 20) {
+            return twentyDollarBill();
+        } else if (value == 10) {
+            return tenDollarBill();
+        } else if (value == 5) {
+            return fiveDollarBill();
+        } else if (value == 1) {
+            return oneDollarBill();
+        } else if (value == 0.25) {
+            return twentyFiveCentCoin();
+        } else if (value == 0.10) {
+            return tenCentCoin();
+        } else if (value == 0.05) {
+            return fiveCentCoin();
+        } else if (value == 0.01) {
+            return oneCentCoin();
+        }
+        return null;
+    }
 }

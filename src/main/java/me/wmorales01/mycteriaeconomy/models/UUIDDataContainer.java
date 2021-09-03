@@ -20,17 +20,17 @@ public class UUIDDataContainer implements PersistentDataType<byte[], UUID> {
 
     @Override
     public byte[] toPrimitive(UUID complex, PersistentDataAdapterContext context) {
-        ByteBuffer bb = ByteBuffer.wrap(new byte[16]);
-        bb.putLong(complex.getMostSignificantBits());
-        bb.putLong(complex.getLeastSignificantBits());
-        return bb.array();
+        ByteBuffer byteBuffer = ByteBuffer.wrap(new byte[16]);
+        byteBuffer.putLong(complex.getMostSignificantBits());
+        byteBuffer.putLong(complex.getLeastSignificantBits());
+        return byteBuffer.array();
     }
 
     @Override
     public UUID fromPrimitive(byte[] primitive, PersistentDataAdapterContext context) {
-        ByteBuffer bb = ByteBuffer.wrap(primitive);
-        long firstLong = bb.getLong();
-        long secondLong = bb.getLong();
+        ByteBuffer byteBuffer = ByteBuffer.wrap(primitive);
+        long firstLong = byteBuffer.getLong();
+        long secondLong = byteBuffer.getLong();
         return new UUID(firstLong, secondLong);
     }
 }

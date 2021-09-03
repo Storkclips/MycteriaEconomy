@@ -2,54 +2,36 @@ package me.wmorales01.mycteriaeconomy.files;
 
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import me.wmorales01.mycteriaeconomy.models.Wallet;
-import org.bukkit.Bukkit;
-import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.List;
 import java.util.UUID;
 
 public class WalletManager {
-    private MycteriaEconomy plugin;
+    private final MycteriaEconomy plugin;
 
-    public WalletManager(MycteriaEconomy instance) {
-        plugin = instance;
+    public WalletManager(MycteriaEconomy plugin) {
+        this.plugin = plugin;
     }
 
-    public void saveWallets() {
-        FileConfiguration data = plugin.getWalletData();
+    // Saves the passed Wallet to its corresponding .yml file
+    public void saveWallet(Wallet wallet) {
+        WalletFile walletFile = new WalletFile(plugin, wallet);
+        FileConfiguration walletData = walletFile.getData();
+        walletData.set("balance", wallet.getBalance());
+        walletData.set("content", wallet.getGUI().getContents());
+        walletFile.saveData();
+    }
 
-        for (Wallet wallet : plugin.getWallets()) {
-            UUID uuid = wallet.getUuid();
-            double balance = wallet.getBalance();
-            ItemStack[] content = wallet.getContent().getContents();
-
-            data.set("wallets." + uuid.toString() + ".balance", balance);
-            data.set("wallets." + uuid.toString() + ".content", content);
+    // Loads the Wallet with the passed UUID from its corresponding .yml file
+    public Wallet loadWallet(UUID walletUuid) {
+        WalletFile walletFile = new WalletFile(plugin, walletUuid);
+        FileConfiguration walletData = walletFile.getData();
+        if (walletData.getKeys(true).size() == 0) { // Wallet file is empty
+            return new Wallet(walletUuid);
         }
-
-        plugin.saveWalletData();
-    }
-
-    public void restoreWallets() {
-        FileConfiguration data = plugin.getWalletData();
-        ConfigurationSection section = data.getConfigurationSection("wallets");
-        if (section == null)
-            return;
-
-        section.getKeys(false).forEach(uuid -> {
-            double balance = data.getDouble("wallets." + uuid + ".balance");
-            @SuppressWarnings("unchecked")
-            ItemStack[] contents = ((List<ItemStack>) data.get("wallets." + uuid + ".content"))
-                    .toArray(new ItemStack[0]);
-
-            Inventory content = Bukkit.createInventory(null, 36);
-            content.setContents(contents);
-            Wallet wallet = new Wallet(UUID.fromString(uuid), balance, content);
-
-            plugin.addWallet(wallet);
-        });
+        double balance = walletData.getDouble("balance");
+        ItemStack[] content = walletData.getList("content").toArray(new ItemStack[0]);
+        return new Wallet(walletUuid, balance, content);
     }
 }

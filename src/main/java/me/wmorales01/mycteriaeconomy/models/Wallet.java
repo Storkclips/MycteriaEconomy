@@ -3,205 +3,159 @@ package me.wmorales01.mycteriaeconomy.models;
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import me.wmorales01.mycteriaeconomy.files.ConfigManager;
 import me.wmorales01.mycteriaeconomy.inventories.WalletHolder;
-import me.wmorales01.mycteriaeconomy.util.BalanceManager;
-import me.wmorales01.mycteriaeconomy.util.Checker;
-import me.wmorales01.mycteriaeconomy.util.Getter;
+import me.wmorales01.mycteriaeconomy.util.BalanceUtil;
 import me.wmorales01.mycteriaeconomy.util.StringUtil;
+import me.wmorales01.mycteriaeconomy.util.WalletUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
-import org.bukkit.NamespacedKey;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.math.RoundingMode;
-import java.text.DecimalFormat;
 import java.util.*;
 
 public class Wallet {
-    private UUID uuid;
+    private final UUID uuid;
+    private final Inventory content;
     private double balance;
-    private Inventory content;
 
     public Wallet() {
-        uuid = UUID.randomUUID();
-        balance = 0.0;
-        this.content = Bukkit.createInventory(null, 36);
+        this.uuid = UUID.randomUUID();
+        this.balance = 0.0;
+        this.content = Bukkit.createInventory(new WalletHolder(this), 36, "Wallet");
     }
 
-    public Wallet(UUID uuid, double balance, Inventory content) {
+    // Used when a wallet file isn't found
+    public Wallet(UUID uuid) {
+        this.uuid = uuid;
+        balance = 0.0;
+        this.content = Bukkit.createInventory(new WalletHolder(this), 36, "Wallet");
+    }
+
+    public Wallet(UUID uuid, double balance, ItemStack[] content) {
         this.uuid = uuid;
         this.balance = balance;
-        this.content = content;
+        this.content = Bukkit.createInventory(new WalletHolder(this), 36, "Wallet");
+        this.content.setContents(content);
     }
 
-    public static Wallet getByItemStack(ItemStack item) {
-        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-        NamespacedKey key = new NamespacedKey(plugin, "wallet_id");
-        if (item == null)
-            return null;
-        if (!item.hasItemMeta())
-            return null;
-        if (item.getItemMeta().getPersistentDataContainer() == null)
-            return null;
-        if (!item.getItemMeta().getPersistentDataContainer().has(key, new UUIDDataContainer()))
-            return null;
+    public static Wallet fromItemStack(ItemStack item) {
+        UUID walletUuid = WalletUtil.getUuidFromItem(item);
+        if (walletUuid == null) return null;
 
-        UUID itemUUID = item.getItemMeta().getPersistentDataContainer().get(key, new UUIDDataContainer());
-        for (Wallet wallet : plugin.getWallets()) {
-            UUID walletUUID = wallet.getUuid();
-            if (!walletUUID.equals(itemUUID))
-                continue;
+        return MycteriaEconomy.getInstance().getWalletManager().loadWallet(walletUuid);
+    }
 
-            return wallet;
+    public void saveWalletData() {
+        MycteriaEconomy.getInstance().getWalletManager().saveWallet(this);
+    }
+
+    public void computeWalletBalance() {
+        double balance = 0;
+        for (ItemStack item : content.getContents()) {
+            if (!EconomyItem.isEconomyItem(item)) continue;
+
+            balance += EconomyItem.getValueFromItem(item);
         }
-        return null;
+        this.balance = balance;
+    }
+
+    // Returns if the passed waller is similar to the current instance
+    public boolean isSimilar(ItemStack wallet) {
+        UUID walletUuid = WalletUtil.getUuidFromItem(wallet);
+        if (walletUuid == null) return false;
+
+        return walletUuid.equals(uuid);
     }
 
     public ItemStack getItemStack() {
-        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
         ItemStack item = new ItemStack(ConfigManager.getWalletItem());
         ItemMeta meta = item.getItemMeta();
-
+        List<String> lore = new ArrayList<>();
         meta.setDisplayName(ChatColor.RESET + "Wallet");
-        meta.setCustomModelData(101);
-        List<String> lore = new ArrayList<String>();
-        DecimalFormat format = new DecimalFormat("#.##");
-        format.setRoundingMode(RoundingMode.CEILING);
-        lore.add(StringUtil.formatColor("&a&oBalance: &l" + format.format(balance) + "$"));
+        lore.add(StringUtil.formatColor("&a&oBalance: &l$" + StringUtil.roundNumber(balance, 2)));
         meta.setLore(lore);
-        if (balance == 0)
+        if (balance == 0) {
             meta.setCustomModelData(101);
-        else if (balance > 0 && balance < 1000)
+        } else if (balance < 1000) {
             meta.setCustomModelData(102);
-        else if (balance >= 1000)
+        } else if (balance >= 1000) {
             meta.setCustomModelData(103);
-
-        NamespacedKey key = new NamespacedKey(plugin, "wallet_id");
-        meta.getPersistentDataContainer().set(key, new UUIDDataContainer(), uuid);
+        }
         item.setItemMeta(meta);
-
+        WalletUtil.addWalletUuidKey(item, uuid);
         return item;
     }
 
-    public Inventory getWalletGUI() {
-        Inventory inventory = Bukkit.createInventory(new WalletHolder(), 36, "Wallet's Balance: ");
-
-        if (content != null)
-            inventory.setContents(content.getContents());
-
-        return inventory;
-    }
-
-    public void increaseBalance(double increase) {
-        for (ItemStack currencyItem : BalanceManager.getBalanceItems(increase))
+    public void increaseWalletBalance(double increase) {
+        for (ItemStack currencyItem : BalanceUtil.balanceToCurrency(increase)) {
             content.addItem(currencyItem);
-
+        }
         this.balance += increase;
+        saveWalletData();
     }
 
     public void discountBalance(double discount) {
         Map<Double, Integer> availableCurrencies = new TreeMap<>(Collections.reverseOrder());
-        // Mapping current currencies
-        for (ItemStack item : content) {
-            if (item == null || item.getType().isAir())
-                continue;
+        // Mapping current currencies in descending order
+        for (ItemStack economyItem : content.getContents()) {
+            if (!EconomyItem.isEconomyItem(economyItem)) continue;
 
-            int amount = item.getAmount();
-            item = item.clone();
-            item.setAmount(1);
-            double value;
-            if (Checker.isBill(item))
-                value = Getter.getValueFromBill(item);
-            else if (Checker.isCoin(item))
-                value = Getter.getValueFromCoin(item);
-            else
-                value = 0;
-
-            if (availableCurrencies.containsKey(value))
-                availableCurrencies.put(value, availableCurrencies.get(value) + amount);
-            else
-                availableCurrencies.put(value, amount);
-        }
-        // Paying debt
-        Iterator<Double> iterator = availableCurrencies.keySet().iterator();
-        ArrayList<ItemStack> toRemove = new ArrayList<>();
-        double discountCopy = discount;
-        while (iterator.hasNext() && discountCopy > 0) {
-            double value = iterator.next();
-            int amount = availableCurrencies.get(value);
-            for (int i = 0; i < amount; i++) {
-                if (discountCopy <= 0)
-                    break;
-
-                toRemove.add(Getter.getCurrencyFromValue(value));
-                discountCopy -= value;
-
-                amount--;
-                if (amount > 0)
-                    availableCurrencies.put(value, amount);
-                else
-                    availableCurrencies.remove(value);
-            }
-        }
-        if (discountCopy < 0) {
-            double change = Math.abs(discountCopy);
-            Iterator<ItemStack> currencyIterator = BalanceManager.getBalanceItems(change).iterator();
-            for (int i = 0; i < content.getSize(); i++) {
-                if (!currencyIterator.hasNext())
-                    break;
-                ItemStack walletItem = content.getItem(i);
-                if (walletItem != null && !walletItem.getType().isAir())
-                    continue;
-
-                content.addItem(currencyIterator.next());
+            int itemAmount = economyItem.getAmount();
+            double economyItemvalue = EconomyItem.getValueFromItem(economyItem);
+            if (availableCurrencies.containsKey(economyItemvalue)) {
+                int availableAmount = availableCurrencies.get(economyItemvalue);
+                availableCurrencies.put(economyItemvalue, availableAmount + itemAmount);
+            } else {
+                availableCurrencies.put(economyItemvalue, itemAmount);
             }
         }
         this.balance -= discount;
+        // Iteration through all the available economy item values from the wallet inventory in descending order
+        // and disconting it from the passed balanceDiscuount until it it lower or equal to 0
+        Iterator<Double> iterator = availableCurrencies.keySet().iterator();
+        ArrayList<ItemStack> spentEconomyItems = new ArrayList<>();
+        while (iterator.hasNext() && discount > 0) {
+            double economyItemValue = iterator.next();
+            int availableAmount = availableCurrencies.get(economyItemValue);
+            while (availableAmount > 0) {
+                if (discount <= 0) break;
+
+                spentEconomyItems.add(EconomyItem.getItemFromValue(economyItemValue));
+                discount -= economyItemValue;
+                availableAmount--;
+                if (availableAmount > 0) {
+                    availableCurrencies.put(economyItemValue, availableAmount);
+                } else {
+                    availableCurrencies.remove(economyItemValue);
+                }
+            }
+        }
+        // If the discount is lower than 0 that means that the transaction ended with a remaning change
+        // Get the change items from the BalanceUtil and add them to the inventory
+        if (discount < 0) {
+            double change = -discount;
+            List<ItemStack> changeItems = BalanceUtil.balanceToCurrency(change);
+            for (ItemStack changeItem : changeItems) {
+                content.addItem(changeItem);
+            }
+        }
         // Removing items from wallet
-        for (ItemStack currencyItem : toRemove)
+        for (ItemStack currencyItem : spentEconomyItems) {
             content.removeItem(currencyItem);
-    }
-
-    public double getBalance() {
-        return balance;
-    }
-
-    public void setBalance(double balance) {
-        this.balance = balance;
+        }
+        saveWalletData();
     }
 
     public UUID getUuid() {
         return uuid;
     }
 
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
-    }
-
-    public Inventory getContent() {
+    public Inventory getGUI() {
         return content;
     }
 
-    public void setContent(Inventory content) {
-        this.content = content;
-    }
-
-    public boolean isSimilar(ItemStack item) {
-        MycteriaEconomy plugin = MycteriaEconomy.getPlugin(MycteriaEconomy.class);
-        NamespacedKey key = new NamespacedKey(plugin, "wallet_id");
-
-        if (!item.hasItemMeta())
-            return false;
-        if (item.getItemMeta().getPersistentDataContainer() == null)
-            return false;
-        if (!item.getItemMeta().getPersistentDataContainer().has(key, new UUIDDataContainer()))
-            return false;
-
-        UUID itemUUID = item.getItemMeta().getPersistentDataContainer().get(key, new UUIDDataContainer());
-        if (!itemUUID.equals(uuid))
-            return false;
-
-        return true;
+    public double getBalance() {
+        return balance;
     }
 }

@@ -10,30 +10,26 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Chest;
 import org.bukkit.command.CommandExecutor;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MycteriaEconomy extends JavaPlugin {
     private final Map<String, NPCCommand> npcSubcommands = new HashMap<>();
     private final Map<Player, EconomyPlayer> economyPlayers = new HashMap<>();
-    private final Map<UUID, Wallet> openWallets = new HashMap<>();
     private final Map<Location, ATM> atms = new HashMap<>();
     private final Map<Player, Machine> machineLinkers = new HashMap<>();
     private final Map<Player, Chest> npcLinkers = new HashMap<>();
-    private final Set<Wallet> wallets = new HashSet<>();
-    private final List<Player> ATMPlacers = new ArrayList<>();
-    private final List<Player> ATMBreakers = new ArrayList<>();
-    private final List<ATM> ATMs = new ArrayList<>();
     private final List<VendingMachine> vendingMachines = new ArrayList<>();
     private final List<TradingMachine> tradingMachines = new ArrayList<>();
     private final List<MachineOperator> vendingOperators = new ArrayList<>();
     private final List<NPCShop> npcShops = new ArrayList<>();
     private final List<NPCOperator> npcOperators = new ArrayList<>();
-    private WalletData walletData;
     private WalletManager walletManager;
     private ATMManager atmManager;
     private MachineManager machineManager;
@@ -46,20 +42,15 @@ public class MycteriaEconomy extends JavaPlugin {
 
     @Override
     public void onEnable() {
-        configureFiles();
+        createConfig();
         registerManagers();
         registerCommands();
+        registerRecipes();
         registerListeners();
 
-        Bukkit.addRecipe(WalletRecipe.getWalletRecipe());
-        MachineRecipes machineRecipes = new MachineRecipes();
-        Bukkit.addRecipe(machineRecipes.getVendingMachineRecipe());
-        Bukkit.addRecipe(machineRecipes.getTradingMachineRecipe());
-
-        walletManager.restoreWallets();
+        atmManager.loadATMs();
         machineManager.loadAllMachines();
         economyPlayerManager.loadOnlineEconomyPlayers();
-
         npcDataManager.restoreNpcData();
         NPCManager npcManager = new NPCManager(this);
         PacketManager packetManager = new PacketManager(this);
@@ -71,7 +62,6 @@ public class MycteriaEconomy extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        walletManager.saveWallets();
         machineManager.saveAllMachines();
         economyPlayerManager.saveOnlineEconomyPlayers();
         npcDataManager.saveAllNPCs();
@@ -86,15 +76,13 @@ public class MycteriaEconomy extends JavaPlugin {
             npcManager.deleteNPC(shop, false);
     }
 
-    private void configureFiles() {
+    private void createConfig() {
         saveDefaultConfig();
-        walletData = new WalletData(this);
     }
 
     private void registerManagers() {
         walletManager = new WalletManager(this);
         atmManager = new ATMManager(this);
-        atmManager.loadATMs();
         machineManager = new MachineManager(this);
         economyPlayerManager = new EconomyPlayerManager(this);
         npcDataManager = new NPCDataManager(this);
@@ -115,14 +103,19 @@ public class MycteriaEconomy extends JavaPlugin {
         npcSubcommands.put("tool", new NPCCommandTool());
     }
 
+    private void registerRecipes() {
+        Bukkit.addRecipe(WalletRecipe.getWalletRecipe());
+        MachineRecipes machineRecipes = new MachineRecipes();
+        Bukkit.addRecipe(machineRecipes.getVendingMachineRecipe());
+        Bukkit.addRecipe(machineRecipes.getTradingMachineRecipe());
+    }
+
     private void registerListeners() {
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new PlayerConnectionHandler(this), this);
-        pluginManager.registerEvents(new WalletHandler(this), this);
+        pluginManager.registerEvents(new WalletHandler(), this);
         pluginManager.registerEvents(new CreativeGUIClick(), this);
         pluginManager.registerEvents(new ATMHandler(this), this);
-        pluginManager.registerEvents(new ATMBreak(this), this);
-        pluginManager.registerEvents(new ATMGUIClick(), this);
         pluginManager.registerEvents(new MachineHandler(this), this);
         pluginManager.registerEvents(new StockGUIClose(), this);
         pluginManager.registerEvents(new StockGUIClick(), this);
@@ -131,40 +124,12 @@ public class MycteriaEconomy extends JavaPlugin {
         pluginManager.registerEvents(new NPCShopHandler(this), this);
     }
 
-    public FileConfiguration getWalletData() {
-        return walletData.getConfig();
-    }
-
-    public void saveWalletData() {
-        walletData.saveConfig();
-    }
-
-    public Set<Wallet> getWallets() {
-        return wallets;
-    }
-
-    public void addWallet(Wallet wallet) {
-        wallets.add(wallet);
-    }
-
-    public Map<UUID, Wallet> getOpenWallets() {
-        return openWallets;
+    public Map<Player, EconomyPlayer> getEconomyPlayers() {
+        return economyPlayers;
     }
 
     public Map<Location, ATM> getAtms() {
         return atms;
-    }
-
-    public List<Player> getATMPlacers() {
-        return ATMPlacers;
-    }
-
-    public List<ATM> getATMs() {
-        return ATMs;
-    }
-
-    public List<Player> getATMBreakers() {
-        return ATMBreakers;
     }
 
     public List<VendingMachine> getVendingMachines() {
@@ -187,10 +152,6 @@ public class MycteriaEconomy extends JavaPlugin {
         return npcSubcommands;
     }
 
-    public Map<Player, EconomyPlayer> getEconomyPlayers() {
-        return economyPlayers;
-    }
-
     public Map<Player, Machine> getMachineLinkers() {
         return machineLinkers;
     }
@@ -203,15 +164,19 @@ public class MycteriaEconomy extends JavaPlugin {
         return npcOperators;
     }
 
-    public NPCDataManager getNpcDataManager() {
-        return npcDataManager;
-    }
-
     public EconomyPlayerManager getEconomyPlayerManager() {
         return economyPlayerManager;
     }
 
+    public WalletManager getWalletManager() {
+        return walletManager;
+    }
+
     public ATMManager getAtmManager() {
         return atmManager;
+    }
+
+    public NPCDataManager getNpcDataManager() {
+        return npcDataManager;
     }
 }

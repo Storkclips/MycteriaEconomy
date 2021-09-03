@@ -12,12 +12,12 @@ import org.bukkit.inventory.meta.ItemMeta;
 import java.util.ArrayList;
 import java.util.List;
 
-public class BalanceManager {
+public class BalanceUtil {
 
     public static void giveBalance(Player player, double balance) {
         PlayerInventory inventory = player.getInventory();
 
-        List<ItemStack> balanceItems = getBalanceItems(balance);
+        List<ItemStack> balanceItems = balanceToCurrency(balance);
         for (ItemStack item : balanceItems)
             inventory.addItem(item);
     }
@@ -69,53 +69,44 @@ public class BalanceManager {
         wallet.setItemMeta(meta);
     }
 
-    public static List<ItemStack> getBalanceItems(double balance) {
-        List<ItemStack> balanceItems = new ArrayList<ItemStack>();
-        EconomyItem ecoItems = new EconomyItem();
-
+    // Returns the passed balance in the form of currency items
+    // Ex. If passed a balance of 60, it will return a 50 and 10 dollar bills
+    public static List<ItemStack> balanceToCurrency(double balance) {
+        List<ItemStack> balanceItems = new ArrayList<>();
         while (balance > 0) {
             if (balance >= 100) {
-                balanceItems.add(ecoItems.oneHundredDollarBill());
+                balanceItems.add(EconomyItem.oneHundredDollarBill());
                 balance -= 100;
-
             } else if (balance >= 50) {
-                balanceItems.add(ecoItems.fiftyDollarBill());
+                balanceItems.add(EconomyItem.fiftyDollarBill());
                 balance -= 50;
-
             } else if (balance >= 20) {
-                balanceItems.add(ecoItems.twentyDollarBill());
+                balanceItems.add(EconomyItem.twentyDollarBill());
                 balance -= 20;
-
             } else if (balance >= 10) {
-                balanceItems.add(ecoItems.tenDollarBill());
+                balanceItems.add(EconomyItem.tenDollarBill());
                 balance -= 10;
-
             } else if (balance >= 5) {
-                balanceItems.add(ecoItems.fiveDollarBill());
+                balanceItems.add(EconomyItem.fiveDollarBill());
                 balance -= 5;
-
             } else if (balance >= 1) {
-                balanceItems.add(ecoItems.oneDollarBill());
+                balanceItems.add(EconomyItem.oneDollarBill());
                 balance -= 1;
-
             } else if (balance >= 0.25) {
-                balanceItems.add(ecoItems.twentyFiveCentCoin());
+                balanceItems.add(EconomyItem.twentyFiveCentCoin());
                 balance -= 0.5;
-
             } else if (balance >= 0.10) {
-                balanceItems.add(ecoItems.tenCentCoin());
+                balanceItems.add(EconomyItem.tenCentCoin());
                 balance -= 0.10;
-
             } else if (balance >= 0.05) {
-                balanceItems.add(ecoItems.fiveCentCoin());
+                balanceItems.add(EconomyItem.fiveCentCoin());
                 balance -= 0.05;
-
             } else if (balance >= 0.01) {
-                balanceItems.add(ecoItems.oneCentCoin());
+                balanceItems.add(EconomyItem.oneCentCoin());
                 balance -= 0.01;
-
-            } else
+            } else {
                 balance = 0;
+            }
         }
         return balanceItems;
     }

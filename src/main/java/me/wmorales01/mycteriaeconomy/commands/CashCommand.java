@@ -1,7 +1,7 @@
 package me.wmorales01.mycteriaeconomy.commands;
 
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-import me.wmorales01.mycteriaeconomy.util.BalanceManager;
+import me.wmorales01.mycteriaeconomy.util.BalanceUtil;
 import me.wmorales01.mycteriaeconomy.util.Messager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -26,7 +26,7 @@ public class CashCommand implements CommandExecutor {
             return true;
         }
         Player player = (Player) sender;
-        double totalBalance = BalanceManager.getBalanceFromInventory(player.getInventory());
+        double totalBalance = BalanceUtil.getBalanceFromInventory(player.getInventory());
         DecimalFormat format = new DecimalFormat("###.##");
         Messager.sendMessage(player, "&6You currently have &a&l" + format.format(totalBalance) + "$&a.");
         return true;

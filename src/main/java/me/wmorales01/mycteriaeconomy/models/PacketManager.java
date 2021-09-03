@@ -21,6 +21,7 @@ public class PacketManager {
     public static Map<UUID, Channel> channels = new HashMap<UUID, Channel>();
     Channel channel;
     private MycteriaEconomy plugin;
+
     public PacketManager(MycteriaEconomy instance) {
         this.plugin = instance;
     }

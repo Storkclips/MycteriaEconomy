@@ -41,11 +41,11 @@ public class EconomyPlayer {
         this.bankBalance = bankBalance;
     }
 
-    public void addBankBalance(double amount) {
+    public void increaseBankBalance(double amount) {
         this.bankBalance += amount;
     }
 
-    public void removeBankBalance(double amount) {
+    public void decreaseBankBalance(double amount) {
         this.bankBalance -= amount;
     }
 
