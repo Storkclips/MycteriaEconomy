@@ -11,6 +11,7 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 
+import java.util.Map;
 import java.util.Set;
 
 public class CommandRunner implements CommandExecutor {
@@ -22,35 +23,56 @@ public class CommandRunner implements CommandExecutor {
 
     @Override
     public boolean onCommand(CommandSender sender, Command cmd, String label, String[] args) {
-        if (cmd.getName().equalsIgnoreCase("npcshop")) {
-            if (args.length == 0) {
-                Messager.sendHelpMessage(sender);
-                return true;
-            }
-            if (!plugin.getNpcSubcommands().containsKey(args[0].toLowerCase())) {
-                Messager.sendErrorMessage(sender, "&cUnknown command. Type &l/ help &cto see the full command list.");
-                return true;
-            }
-            NPCCommand subcommand = plugin.getNpcSubcommands().get(args[0].toLowerCase());
-            if (!sender.hasPermission(subcommand.getPermission())) {
-                Messager.sendNoPermissionMessage(sender);
-                return true;
-            }
-            if (subcommand.isPlayerCommand() && !(sender instanceof Player)) {
-                Messager.sendErrorMessage(sender, "&cNot available for consoles.");
-                return true;
-            }
-            if (subcommand.isConsoleCommand() && sender instanceof Player) {
-                Messager.sendErrorMessage(sender, "&cNot available for players.");
-                return true;
-            }
-            if (args.length < subcommand.getArgumentLength()) {
-                Messager.sendErrorMessage(sender, "&cUsage: &l" + subcommand.getUsageMessage());
-                return true;
-            }
-            subcommand.execute(sender, args);
+        String ranCommand = cmd.getName();
+        if (ranCommand.equalsIgnoreCase("economy") || ranCommand.equalsIgnoreCase("npcshop")) {
+            return runSubcommand(sender, cmd, args);
+        } else {
+            return runCommand(sender, cmd, args);
+        }
+    }
 
-        } else if (cmd.getName().equalsIgnoreCase("linkmachine")) {
+    private boolean runSubcommand(CommandSender sender, Command cmd, String[] args) {
+        String ranCommand = cmd.getName();
+        Map<String, ? extends Subcommand> potentialSubcommands;
+        if (ranCommand.equalsIgnoreCase("economy")) {
+            potentialSubcommands = plugin.getEconomySubcommands();
+        } else if (ranCommand.equalsIgnoreCase("npcshop")) {
+            potentialSubcommands = plugin.getNpcSubcommands();
+        } else {
+            return false;
+        }
+        if (args.length == 0) {
+            Messager.sendHelpMessage(sender);
+            return true;
+        }
+        if (!potentialSubcommands.containsKey(args[0].toLowerCase())) {
+            Messager.sendErrorMessage(sender, "&cUnknown command. Type &l/" + ranCommand.toLowerCase() +
+                    " help &cto see the full command list.");
+            return true;
+        }
+        Subcommand subcommand = potentialSubcommands.get(args[0].toLowerCase());
+        if (!sender.hasPermission(subcommand.getPermission())) {
+            Messager.sendNoPermissionMessage(sender);
+            return true;
+        }
+        if (subcommand.isPlayerCommand() && !(sender instanceof Player)) {
+            Messager.sendErrorMessage(sender, "&cNot available for consoles.");
+            return true;
+        }
+        if (subcommand.isConsoleCommand() && sender instanceof Player) {
+            Messager.sendErrorMessage(sender, "&cNot available for players.");
+            return true;
+        }
+        if (args.length < subcommand.getArgumentLength()) {
+            Messager.sendErrorMessage(sender, "&cUsage: &l" + subcommand.getUsageMessage());
+            return true;
+        }
+        subcommand.execute(sender, args);
+        return true;
+    }
+
+    private boolean runCommand(CommandSender sender, Command cmd, String[] args) {
+        if (cmd.getName().equalsIgnoreCase("linkmachine")) {
             if (!(sender instanceof Player)) {
                 Messager.sendErrorMessage(sender, "&cNot available for consoles.");
                 return true;

@@ -16,8 +16,7 @@ public class EconomyPlayerManager {
     public void saveEconomyPlayer(EconomyPlayer economyPlayer) {
         EconomyPlayerFile economyPlayerFile = new EconomyPlayerFile(plugin, economyPlayer);
         FileConfiguration data = economyPlayerFile.getData();
-        String path = "economy-players." + economyPlayer.getPlayer().getUniqueId() + ".";
-        data.set(path + "balance", economyPlayer.getBankBalance());
+        data.set("balance", economyPlayer.getBankBalance());
         economyPlayerFile.saveData();
     }
 

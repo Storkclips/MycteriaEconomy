@@ -23,6 +23,9 @@ public class WalletFile {
 
     private void createDataFile(MycteriaEconomy plugin, String walletUuidString) {
         this.dataFile = new File(plugin.getDataFolder() + "/wallets/" + walletUuidString + ".yml");
+        if (!dataFile.getParentFile().exists()) {
+            dataFile.getParentFile().mkdirs();
+        }
         if (!dataFile.exists()) {
             try {
                 dataFile.createNewFile();

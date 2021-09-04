@@ -71,6 +71,9 @@ public class WalletHandler implements Listener {
         ClickType clickType = event.getClick();
         ItemStack savedItem;
         if (clickedInventory.getType() == InventoryType.CHEST) { // Clicked wallet GUI
+//            if (!clickType.isShiftClick() && !clickType.isKeyboardClick()) { // Clicking to take an item from inventory
+//                if (player.getItemOnCursor().getType().isAir()) return;
+//            }
             if (clickType.isKeyboardClick() && event.getHotbarButton() != -1) {
                 savedItem = player.getInventory().getItem(event.getHotbarButton());
             } else {
@@ -81,6 +84,7 @@ public class WalletHandler implements Listener {
 
             savedItem = event.getCurrentItem();
         }
+        if (savedItem == null || savedItem.getType().isAir()) return;
         if (EconomyItem.isEconomyItem(savedItem)) return;
 
         event.setCancelled(true);
@@ -91,7 +95,7 @@ public class WalletHandler implements Listener {
     // dragged items isn't an Economy Item then cancel the event
     @EventHandler
     public void onWalletGUIDrag(InventoryDragEvent event) {
-        if ((event.getInventory().getHolder() instanceof WalletHolder)) return;
+        if (!(event.getInventory().getHolder() instanceof WalletHolder)) return;
         boolean draggedIntoWallet = false;
         for (int slot : event.getRawSlots()) {
             if (slot > 35) continue;
@@ -126,5 +130,6 @@ public class WalletHandler implements Listener {
             playerInventory.setItem(inventorySlot, openWallet.getItemStack());
         }
         player.updateInventory();
+        openWallet.saveWalletData();
     }
 }

@@ -26,6 +26,9 @@ public class EconomyPlayerFile {
     private void createDataFile(MycteriaEconomy plugin, String playerUuidString) {
         this.dataFile = new File(plugin.getDataFolder() + "/economy_players/" + playerUuidString + ".yml");
         if (!dataFile.exists()) {
+            if (!dataFile.getParentFile().exists()) {
+                dataFile.getParentFile().mkdirs();
+            }
             try {
                 dataFile.createNewFile();
             } catch (IOException e) {

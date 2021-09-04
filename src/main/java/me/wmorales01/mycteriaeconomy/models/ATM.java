@@ -64,10 +64,12 @@ public class ATM {
     public Inventory getWithdrawATMGUI(EconomyPlayer economyPlayer) {
         Inventory inventory = Bukkit.createInventory(new ATMHolder(this), 36, "ATM");
         GUIUtil.setFrame(inventory, Material.LIME_STAINED_GLASS_PANE);
-        // Filling slot 10 and 16
+        // Filling slot 10, 16, 19 and 25
         ItemStack filler = GUIUtil.getFiller(Material.LIME_STAINED_GLASS_PANE);
         inventory.setItem(10, filler);
         inventory.setItem(16, filler);
+        inventory.setItem(19, filler);
+        inventory.setItem(25, filler);
         addEconomyItems(inventory);
         addBalanceItem(inventory, economyPlayer.getBankBalance());
         addGuideItem(inventory);
@@ -76,7 +78,10 @@ public class ATM {
     }
 
     private void addEconomyItems(Inventory inventory) {
+        inventory.setItem(22, getATMItem(EconomyItem.oneHundredDollarBill()));
         for (ItemStack economyItem : EconomyItem.getEconomyItems()) {
+            if (EconomyItem.getValueFromItem(economyItem) == 100) continue;
+
             inventory.addItem(getATMItem(economyItem));
         }
     }
@@ -92,7 +97,7 @@ public class ATM {
 
     private void addBalanceItem(Inventory inventory, double balance) {
         ItemStack balanceItem = GUIUtil.getGUIItem(Material.SUNFLOWER,
-                StringUtil.formatColor("&aBalance: &a&l" + StringUtil.roundNumber(balance, 2)), null);
+                StringUtil.formatColor("&aBalance: &a&l$" + StringUtil.roundNumber(balance, 2)), null);
         inventory.setItem(30, balanceItem);
     }
 

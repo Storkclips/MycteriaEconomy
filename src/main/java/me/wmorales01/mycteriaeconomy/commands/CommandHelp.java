@@ -6,7 +6,7 @@ import org.bukkit.command.CommandSender;
 public class CommandHelp extends NPCCommand {
     public CommandHelp() {
         setName("help");
-        setHelpMessage("Displays this list.");
+        setInfoMessage("Displays this list.");
         setPermission(".help");
         setUsageMessage("/ help");
         setArgumentLength(1);

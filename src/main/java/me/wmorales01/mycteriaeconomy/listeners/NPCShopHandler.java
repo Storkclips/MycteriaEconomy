@@ -6,6 +6,7 @@ import me.wmorales01.mycteriaeconomy.models.NPCManager;
 import me.wmorales01.mycteriaeconomy.models.NPCShop;
 import me.wmorales01.mycteriaeconomy.models.NPCTool;
 import me.wmorales01.mycteriaeconomy.util.Messager;
+import me.wmorales01.mycteriaeconomy.util.SFXManager;
 import net.minecraft.server.v1_16_R3.EntityPlayer;
 import net.minecraft.server.v1_16_R3.PacketPlayOutEntity;
 import net.minecraft.server.v1_16_R3.PacketPlayOutEntityHeadRotation;

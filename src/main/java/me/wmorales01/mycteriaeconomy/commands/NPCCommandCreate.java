@@ -13,7 +13,7 @@ public class NPCCommandCreate extends NPCCommand {
         this.plugin = plugin;
 
         setName("create");
-        setHelpMessage("Creates a NPC shop.");
+        setInfoMessage("Creates a NPC shop.");
         setPermission("economyplugin.npcshop.create");
         setUsageMessage("/npcshop create <Skin>");
         setArgumentLength(2);

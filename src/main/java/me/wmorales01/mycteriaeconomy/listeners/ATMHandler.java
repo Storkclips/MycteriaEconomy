@@ -45,7 +45,6 @@ public class ATMHandler implements Listener {
         Player player = event.getPlayer();
         ItemStack handItem = event.getItemInHand();
         if (!handItem.isSimilar(ATM.getItemStack())) return;
-        if (!plugin.getATMPlacers().contains(player)) return;
         if (!player.hasPermission("economyplugin.createatm")) {
             Messager.sendNoPermissionMessage(player);
             return;
@@ -104,11 +103,13 @@ public class ATMHandler implements Listener {
             return;
         }
         economyPlayer.decreaseBankBalance(withdrawValue);
+        ItemStack withdrawnItem = EconomyItem.getItemFromValue(withdrawValue);
+        if (withdrawnItem == null) return;
         Location playerLocation = player.getLocation();
         if (player.getInventory().firstEmpty() == -1) {
-            playerLocation.getWorld().dropItemNaturally(playerLocation, economyItem);
+            playerLocation.getWorld().dropItemNaturally(playerLocation, withdrawnItem);
         } else {
-            player.getInventory().addItem(economyItem);
+            player.getInventory().addItem(withdrawnItem);
         }
         SFXManager.playWorldSound(playerLocation, Sound.BLOCK_NOTE_BLOCK_BIT, 0.7F, 1.3F);
         player.openInventory(atm.getWithdrawATMGUI(economyPlayer));
@@ -118,7 +119,7 @@ public class ATMHandler implements Listener {
     // passed atm's GUI after deleting the clicked economyItem
     private void depositBankBalance(ATM atm, EconomyPlayer economyPlayer, ItemStack economyItem) {
         double depositValue = EconomyItem.getValueFromItem(economyItem);
-        economyPlayer.increaseBankBalance(depositValue);
+        economyPlayer.increaseBankBalance(depositValue * economyItem.getAmount());
         economyItem.setAmount(0);
 
         Player player = economyPlayer.getPlayer();

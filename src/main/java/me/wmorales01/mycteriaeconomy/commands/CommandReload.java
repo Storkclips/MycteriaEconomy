@@ -11,7 +11,7 @@ public class CommandReload extends NPCCommand {
         this.plugin = plugin;
 
         setName("reload");
-        setHelpMessage("Reloads the plugin's config.");
+        setInfoMessage("Reloads the plugin's config.");
         setPermission(".reload");
         setUsageMessage("/ reload");
         setArgumentLength(1);

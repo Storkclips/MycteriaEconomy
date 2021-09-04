@@ -18,7 +18,7 @@ commands:
 
   removecash:
 
-  createatm:
+  atm:
 
   linkmachine:
 

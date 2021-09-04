@@ -11,7 +11,7 @@ public class NPCCommandTool extends NPCCommand {
 
     public NPCCommandTool() {
         setName("tool");
-        setHelpMessage("Gives you the NPC tool.");
+        setInfoMessage("Gives you the NPC tool.");
         setPermission("economyplugin.npc.tool");
         setUsageMessage("/npcshop tool");
         setArgumentLength(1);

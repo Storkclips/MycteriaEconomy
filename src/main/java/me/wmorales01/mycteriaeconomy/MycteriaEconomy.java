@@ -1,7 +1,10 @@
 package me.wmorales01.mycteriaeconomy;
 
 import me.wmorales01.mycteriaeconomy.commands.*;
-import me.wmorales01.mycteriaeconomy.files.*;
+import me.wmorales01.mycteriaeconomy.files.ATMManager;
+import me.wmorales01.mycteriaeconomy.files.EconomyPlayerManager;
+import me.wmorales01.mycteriaeconomy.files.NPCDataManager;
+import me.wmorales01.mycteriaeconomy.files.WalletManager;
 import me.wmorales01.mycteriaeconomy.listeners.*;
 import me.wmorales01.mycteriaeconomy.models.*;
 import me.wmorales01.mycteriaeconomy.recipes.MachineRecipes;
@@ -14,12 +17,10 @@ import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class MycteriaEconomy extends JavaPlugin {
+    private final Map<String, EconomyCommand> economySubcommands = new LinkedHashMap<>();
     private final Map<String, NPCCommand> npcSubcommands = new HashMap<>();
     private final Map<Player, EconomyPlayer> economyPlayers = new HashMap<>();
     private final Map<Location, ATM> atms = new HashMap<>();
@@ -32,7 +33,7 @@ public class MycteriaEconomy extends JavaPlugin {
     private final List<NPCOperator> npcOperators = new ArrayList<>();
     private WalletManager walletManager;
     private ATMManager atmManager;
-    private MachineManager machineManager;
+    //    private MachineManager machineManager;
     private EconomyPlayerManager economyPlayerManager;
     private NPCDataManager npcDataManager;
 
@@ -49,7 +50,7 @@ public class MycteriaEconomy extends JavaPlugin {
         registerListeners();
 
         atmManager.loadATMs();
-        machineManager.loadAllMachines();
+//        machineManager.loadAllMachines();
         economyPlayerManager.loadOnlineEconomyPlayers();
         npcDataManager.restoreNpcData();
         NPCManager npcManager = new NPCManager(this);
@@ -62,7 +63,7 @@ public class MycteriaEconomy extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        machineManager.saveAllMachines();
+//        machineManager.saveAllMachines();
         economyPlayerManager.saveOnlineEconomyPlayers();
         npcDataManager.saveAllNPCs();
 
@@ -83,7 +84,7 @@ public class MycteriaEconomy extends JavaPlugin {
     private void registerManagers() {
         walletManager = new WalletManager(this);
         atmManager = new ATMManager(this);
-        machineManager = new MachineManager(this);
+//        machineManager = new MachineManager(this);
         economyPlayerManager = new EconomyPlayerManager(this);
         npcDataManager = new NPCDataManager(this);
     }
@@ -96,7 +97,7 @@ public class MycteriaEconomy extends JavaPlugin {
         getCommand("cash").setExecutor(new CashCommand(this));
         getCommand("wallet").setExecutor(new WalletCommand(this));
         getCommand("gui").setExecutor(new GUICommand());
-        getCommand("createatm").setExecutor(new CreateATMCommand(this));
+        getCommand("atm").setExecutor(new CreateATMCommand(this));
         getCommand("setbalance").setExecutor(new SetBalanceCommand(this));
         getCommand("npcshop").setTabCompleter(new NPCCommandCompleter(this));
         npcSubcommands.put("create", new NPCCommandCreate(this));
@@ -116,12 +117,16 @@ public class MycteriaEconomy extends JavaPlugin {
         pluginManager.registerEvents(new WalletHandler(), this);
         pluginManager.registerEvents(new CreativeGUIClick(), this);
         pluginManager.registerEvents(new ATMHandler(this), this);
-        pluginManager.registerEvents(new MachineHandler(this), this);
+//        pluginManager.registerEvents(new MachineHandler(this), this);
         pluginManager.registerEvents(new StockGUIClose(), this);
         pluginManager.registerEvents(new StockGUIClick(), this);
         pluginManager.registerEvents(new PlayerChat(this), this);
         pluginManager.registerEvents(new PrepareWalletCraft(), this);
         pluginManager.registerEvents(new NPCShopHandler(this), this);
+    }
+
+    public Map<String, EconomyCommand> getEconomySubcommands() {
+        return economySubcommands;
     }
 
     public Map<Player, EconomyPlayer> getEconomyPlayers() {
