@@ -1,39 +1,40 @@
 package me.wmorales01.mycteriaeconomy;
 
-import me.wmorales01.mycteriaeconomy.commands.*;
-import me.wmorales01.mycteriaeconomy.files.ATMManager;
-import me.wmorales01.mycteriaeconomy.files.EconomyPlayerManager;
-import me.wmorales01.mycteriaeconomy.files.NPCDataManager;
-import me.wmorales01.mycteriaeconomy.files.WalletManager;
+import me.wmorales01.mycteriaeconomy.commands.CommandCompleter;
+import me.wmorales01.mycteriaeconomy.commands.CommandRunner;
+import me.wmorales01.mycteriaeconomy.commands.economy.*;
+import me.wmorales01.mycteriaeconomy.commands.npc.*;
+import me.wmorales01.mycteriaeconomy.files.*;
 import me.wmorales01.mycteriaeconomy.listeners.*;
 import me.wmorales01.mycteriaeconomy.models.*;
 import me.wmorales01.mycteriaeconomy.recipes.MachineRecipes;
 import me.wmorales01.mycteriaeconomy.recipes.WalletRecipe;
+import net.minecraft.server.v1_16_R3.EntityPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.block.Chest;
 import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class MycteriaEconomy extends JavaPlugin {
     private final Map<String, EconomyCommand> economySubcommands = new LinkedHashMap<>();
-    private final Map<String, NPCCommand> npcSubcommands = new HashMap<>();
+    private final Map<String, NPCCommand> npcSubcommands = new LinkedHashMap<>();
     private final Map<Player, EconomyPlayer> economyPlayers = new HashMap<>();
     private final Map<Location, ATM> atms = new HashMap<>();
-    private final Map<Player, Machine> machineLinkers = new HashMap<>();
-    private final Map<Player, Chest> npcLinkers = new HashMap<>();
-    private final List<VendingMachine> vendingMachines = new ArrayList<>();
-    private final List<TradingMachine> tradingMachines = new ArrayList<>();
-    private final List<MachineOperator> vendingOperators = new ArrayList<>();
-    private final List<NPCShop> npcShops = new ArrayList<>();
-    private final List<NPCOperator> npcOperators = new ArrayList<>();
+    private final Map<Location, AbstractMachine> machines = new HashMap<>(); // Stores the Trading and Vending Machines of the server
+    private final Map<UUID, AbstractMachine> machineLinkers = new HashMap<>(); // Stores the players that are linking chests to machines
+    private final Map<EntityPlayer, AbstractNPCShop> npcShops = new HashMap<>(); // Stores all the NPC Shops of the server
+    private final Map<UUID, NPCShopOperator> npcShopOperators = new HashMap<>(); // Stores NPCShopOperators of the server
     private WalletManager walletManager;
     private ATMManager atmManager;
-    //    private MachineManager machineManager;
+    private MachineManager machineManager;
     private EconomyPlayerManager economyPlayerManager;
     private NPCDataManager npcDataManager;
 
@@ -48,33 +49,20 @@ public class MycteriaEconomy extends JavaPlugin {
         registerCommands();
         registerRecipes();
         registerListeners();
-
         atmManager.loadATMs();
-//        machineManager.loadAllMachines();
         economyPlayerManager.loadOnlineEconomyPlayers();
-        npcDataManager.restoreNpcData();
-        NPCManager npcManager = new NPCManager(this);
-        PacketManager packetManager = new PacketManager(this);
-        for (Player online : Bukkit.getOnlinePlayers()) {
-            npcManager.addJoinPacket(online);
-            packetManager.injectPacket(online);
-        }
+        machineManager.loadMachines();
+        npcDataManager.loadNpcShops();
     }
 
     @Override
     public void onDisable() {
-//        machineManager.saveAllMachines();
         economyPlayerManager.saveOnlineEconomyPlayers();
-        npcDataManager.saveAllNPCs();
-
-        PacketManager packetManager = new PacketManager(this);
-        NPCManager npcManager = new NPCManager(this);
-        for (Player player : Bukkit.getOnlinePlayers())
+        machineManager.saveMachines();
+        npcDataManager.saveNpcShops();
+        for (Player player : Bukkit.getOnlinePlayers()) {
             player.closeInventory();
-        for (Player online : Bukkit.getOnlinePlayers())
-            packetManager.uninjectPacket(online);
-        for (NPCShop shop : npcShops)
-            npcManager.deleteNPC(shop, false);
+        }
     }
 
     private void createConfig() {
@@ -84,23 +72,32 @@ public class MycteriaEconomy extends JavaPlugin {
     private void registerManagers() {
         walletManager = new WalletManager(this);
         atmManager = new ATMManager(this);
-//        machineManager = new MachineManager(this);
+        machineManager = new MachineManager(this);
         economyPlayerManager = new EconomyPlayerManager(this);
         npcDataManager = new NPCDataManager(this);
     }
 
     private void registerCommands() {
-        CommandExecutor mainExecutor = new CommandRunner(this);
-        getCommand("linkmachine").setExecutor(mainExecutor);
-        getCommand("linknpc").setExecutor(mainExecutor);
-        getCommand("npcshop").setExecutor(mainExecutor);
-        getCommand("cash").setExecutor(new CashCommand(this));
-        getCommand("wallet").setExecutor(new WalletCommand(this));
-        getCommand("gui").setExecutor(new GUICommand());
-        getCommand("atm").setExecutor(new CreateATMCommand(this));
-        getCommand("setbalance").setExecutor(new SetBalanceCommand(this));
-        getCommand("npcshop").setTabCompleter(new NPCCommandCompleter(this));
+        CommandExecutor commandExecutor = new CommandRunner(this);
+        TabCompleter tabCompleter = new CommandCompleter(this);
+        getCommand("economy").setExecutor(commandExecutor);
+        getCommand("economy").setTabCompleter(tabCompleter);
+        getCommand("linkmachine").setExecutor(commandExecutor);
+        getCommand("linknpc").setExecutor(commandExecutor);
+        getCommand("npcshop").setExecutor(commandExecutor);
+        getCommand("npcshop").setTabCompleter(tabCompleter);
+        economySubcommands.put("balance", new EconomyCommandBalance());
+        economySubcommands.put("cash", new EconomyCommandCash());
+        economySubcommands.put("wallet", new EconomyCommandWallet());
+        economySubcommands.put("atm", new EconomyCommandATM());
+        economySubcommands.put("currency", new EconomyCommandCurrency());
+        economySubcommands.put("help", new EconomyCommandHelp());
+        economySubcommands.put("reload", new EconomyCommandReload(this));
         npcSubcommands.put("create", new NPCCommandCreate(this));
+        npcSubcommands.put("configure", new NPCCommandConfigure(this));
+        npcSubcommands.put("delete", new NPCCommandDelete(this));
+        npcSubcommands.put("link", new NPCCommandLink(this));
+        npcSubcommands.put("equip", new NPCCommandEquip(this));
         npcSubcommands.put("tool", new NPCCommandTool());
     }
 
@@ -115,14 +112,11 @@ public class MycteriaEconomy extends JavaPlugin {
         PluginManager pluginManager = getServer().getPluginManager();
         pluginManager.registerEvents(new PlayerConnectionHandler(this), this);
         pluginManager.registerEvents(new WalletHandler(), this);
-        pluginManager.registerEvents(new CreativeGUIClick(), this);
+        pluginManager.registerEvents(new CurrencyGUIHandler(), this);
         pluginManager.registerEvents(new ATMHandler(this), this);
-//        pluginManager.registerEvents(new MachineHandler(this), this);
-        pluginManager.registerEvents(new StockGUIClose(), this);
-        pluginManager.registerEvents(new StockGUIClick(), this);
-        pluginManager.registerEvents(new PlayerChat(this), this);
-        pluginManager.registerEvents(new PrepareWalletCraft(), this);
-        pluginManager.registerEvents(new NPCShopHandler(this), this);
+        pluginManager.registerEvents(new ShopHandler(this), this);
+        pluginManager.registerEvents(new MachineHandler(this), this);
+        pluginManager.registerEvents(new NPCSHopHandler(this), this);
     }
 
     public Map<String, EconomyCommand> getEconomySubcommands() {
@@ -137,36 +131,24 @@ public class MycteriaEconomy extends JavaPlugin {
         return atms;
     }
 
-    public List<VendingMachine> getVendingMachines() {
-        return vendingMachines;
+    public Map<Location, AbstractMachine> getMachines() {
+        return machines;
     }
 
-    public List<MachineOperator> getVendingOperators() {
-        return vendingOperators;
-    }
-
-    public List<TradingMachine> getTradingMachines() {
-        return tradingMachines;
-    }
-
-    public List<NPCShop> getNpcShops() {
-        return npcShops;
+    public Map<UUID, AbstractMachine> getMachineLinkers() {
+        return machineLinkers;
     }
 
     public Map<String, NPCCommand> getNpcSubcommands() {
         return npcSubcommands;
     }
 
-    public Map<Player, Machine> getMachineLinkers() {
-        return machineLinkers;
+    public Map<EntityPlayer, AbstractNPCShop> getNpcShops() {
+        return npcShops;
     }
 
-    public Map<Player, Chest> getNpcLinkers() {
-        return npcLinkers;
-    }
-
-    public List<NPCOperator> getNpcOperators() {
-        return npcOperators;
+    public Map<UUID, NPCShopOperator> getNpcShopOperators() {
+        return npcShopOperators;
     }
 
     public EconomyPlayerManager getEconomyPlayerManager() {
@@ -179,6 +161,10 @@ public class MycteriaEconomy extends JavaPlugin {
 
     public ATMManager getAtmManager() {
         return atmManager;
+    }
+
+    public MachineManager getMachineManager() {
+        return machineManager;
     }
 
     public NPCDataManager getNpcDataManager() {

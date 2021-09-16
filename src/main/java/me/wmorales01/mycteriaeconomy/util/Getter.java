@@ -1,6 +1,6 @@
 package me.wmorales01.mycteriaeconomy.util;
 
-import me.wmorales01.mycteriaeconomy.models.EconomyItem;
+import me.wmorales01.mycteriaeconomy.models.CurrencyItem;
 import org.apache.commons.lang.ArrayUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
@@ -78,7 +78,7 @@ public class Getter {
     }
 
     public static ItemStack getCurrencyFromValue(double value) {
-        EconomyItem items = new EconomyItem();
+        CurrencyItem items = new CurrencyItem();
         if (value == 100)
             return items.oneHundredDollarBill();
         else if (value == 50)

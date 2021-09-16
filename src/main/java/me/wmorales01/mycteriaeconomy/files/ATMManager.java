@@ -2,10 +2,8 @@ package me.wmorales01.mycteriaeconomy.files;
 
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import me.wmorales01.mycteriaeconomy.models.ATM;
-import me.wmorales01.mycteriaeconomy.util.LogUtil;
-import org.bukkit.Bukkit;
+import me.wmorales01.mycteriaeconomy.util.YAMLUtil;
 import org.bukkit.Location;
-import org.bukkit.World;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.util.UUID;
@@ -18,13 +16,10 @@ public class ATMManager {
     }
 
     public void saveATM(ATM atm) {
-        FileConfiguration data = getATMData();
-        String path = atm.getUuid().toString() + ".";
+        FileConfiguration atmData = getATMData();
         Location atmLocation = atm.getLocation();
-        data.set(path + "x", atmLocation.getBlockX());
-        data.set(path + "y", atmLocation.getBlockY());
-        data.set(path + "z", atmLocation.getBlockZ());
-        data.set(path + "world", atmLocation.getWorld().getName());
+        String path = atm.getUuid().toString();
+        YAMLUtil.saveBlockLocationToYaml(atmLocation, atmData, path);
         saveATMData();
     }
 
@@ -37,20 +32,9 @@ public class ATMManager {
         FileConfiguration data = getATMData();
         for (String uuidKey : data.getKeys(false)) {
             UUID uuid = UUID.fromString(uuidKey);
-            int x = data.getInt(uuidKey + ".x");
-            int y = data.getInt(uuidKey + ".y");
-            int z = data.getInt(uuidKey + ".z");
-            String worldName = data.getString(uuidKey + ".world");
-            if (worldName == null) {
-                LogUtil.sendWarnLog("Missing world for ATM '" + uuidKey + "' in atms.yml.");
-                continue;
-            }
-            World world = Bukkit.getWorld(worldName);
-            if (world == null) {
-                LogUtil.sendWarnLog("Unknown world for ATM '" + uuidKey + "' in atms.yml");
-                continue;
-            }
-            Location atmLocation = new Location(world, x, y, z);
+            Location atmLocation = YAMLUtil.loadLocationFromYaml(data, uuidKey);
+            if (atmLocation == null) continue;
+
             new ATM(uuid, atmLocation).registerATM();
         }
     }

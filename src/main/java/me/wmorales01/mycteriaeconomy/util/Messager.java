@@ -41,4 +41,8 @@ public class Messager {
     public static void sendNoPermissionMessage(CommandSender sender) {
         sendErrorMessage(sender, "&cYou do not have permissions to use this command!");
     }
+
+    public static void sendPlayerNotFoundMessage(CommandSender sender, String playerName) {
+        Messager.sendErrorMessage(sender, "&cPlayer &l" + playerName + " &cnot found.");
+    }
 }

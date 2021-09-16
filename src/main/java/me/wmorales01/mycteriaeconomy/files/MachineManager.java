@@ -1,175 +1,124 @@
-//package me.wmorales01.mycteriaeconomy.files;
-//
-//import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-//import me.wmorales01.mycteriaeconomy.models.Machine;
-//import me.wmorales01.mycteriaeconomy.models.MachineItem;
-//import me.wmorales01.mycteriaeconomy.models.TradingMachine;
-//import me.wmorales01.mycteriaeconomy.models.VendingMachine;
-//import org.bukkit.Bukkit;
-//import org.bukkit.Location;
-//import org.bukkit.World;
-//import org.bukkit.configuration.ConfigurationSection;
-//import org.bukkit.configuration.file.FileConfiguration;
-//import org.bukkit.inventory.ItemStack;
-//
-//import java.util.ArrayList;
-//import java.util.List;
-//import java.util.UUID;
-//
-//public class MachineManager {
-//    private MycteriaEconomy plugin;
-//    private FileConfiguration data;
-//
-//    public MachineManager(MycteriaEconomy instance) {
-//        plugin = instance;
-//    }
-//
-//    public void saveAllMachines() {
-//        saveATMs();
-//        saveMachines(plugin.getVendingMachines(), "vending-machines.");
-//        saveMachines(plugin.getTradingMachines(), "trading-machines.");
-//
-//    }
-//
-//    public void loadAllMachines() {
-//        loadATMs();
-//        loadMachines("vending-machines.");
-//        loadMachines("trading-machines.");
-//    }
-//
-//    public void saveMachines(List<? extends Machine> machines, String path) {
-//        data = plugin.getMachineData();
-//        if (path.contains("vending-machines") && plugin.getVendingMachines().isEmpty())
-//            return;
-//        else if (path.contains("trading-machines") && plugin.getTradingMachines().isEmpty())
-//            return;
-//
-//        int var = 1;
-//        for (Machine machine : machines) {
-//            String ownerUuid = machine.getOwnerUUID().toString();
-//            data.set(path + var + ".owner", ownerUuid);
-//
-//            if (machine instanceof VendingMachine) {
-//                double profit = ((VendingMachine) machine).getProfit();
-//                data.set(path + var + ".profit", profit);
-//
-//            } else if (machine instanceof TradingMachine) {
-//                double machineBalance = ((TradingMachine) machine).getMachineBalance();
-//                data.set(path + var + ".machine-balance", machineBalance);
-//            }
-//            Location machineLocation = machine.getLocation();
-//            int x = machineLocation.getBlockX();
-//            int y = machineLocation.getBlockY();
-//            int z = machineLocation.getBlockZ();
-//            String world = machineLocation.getWorld().getName();
-//
-//            data.set(path + var + ".location.x", x);
-//            data.set(path + var + ".location.y", y);
-//            data.set(path + var + ".location.z", z);
-//            data.set(path + var + ".location.world", world);
-//
-//            List<Location> chestLocations = machine.getChestLocations();
-//            int chestVar = 1;
-//            for (Location chestLocation : chestLocations) {
-//                x = chestLocation.getBlockX();
-//                y = chestLocation.getBlockY();
-//                z = chestLocation.getBlockZ();
-//                world = chestLocation.getWorld().getName();
-//
-//                data.set(path + var + ".chest-locations" + "." + chestVar + ".x", x);
-//                data.set(path + var + ".chest-locations" + "." + chestVar + ".y", y);
-//                data.set(path + var + ".chest-locations" + "." + chestVar + ".z", z);
-//                data.set(path + var + ".chest-locations" + "." + chestVar + ".world", world);
-//                chestVar++;
-//            }
-//            List<MachineItem> stock = machine.getStock();
-//            int varItem = 1;
-//            for (MachineItem machineItem : stock) {
-//                ItemStack item = machineItem.getItemStack();
-//                double sellPrice = machineItem.getPrice();
-//                int sellAmount = machineItem.getSellAmount();
-//                int stockAmount = machineItem.getStockAmount();
-//
-//                data.set(path + var + ".stock." + varItem + ".item", item);
-//                data.set(path + var + ".stock." + varItem + ".sell-price", sellPrice);
-//                data.set(path + var + ".stock." + varItem + ".sell-amount", sellAmount);
-//                data.set(path + var + ".stock." + varItem + ".stock-amount", stockAmount);
-//                varItem++;
-//            }
-//            var++;
-//        }
-//
-//        plugin.saveMachineData();
-//    }
-//
-//    public void loadMachines(String path) {
-//        data = plugin.getMachineData();
-//        if (path == null) {
-//            loadMachines("vending-machines.");
-//            loadMachines("trading-machines.");
-//            return;
-//        }
-//        ConfigurationSection dataSection = data.getConfigurationSection(path.replace(".", ""));
-//        if (dataSection != null)
-//            dataSection.getKeys(false).forEach(machineKey -> {
-//                String dataPath = path + machineKey;
-//
-//                UUID uuid = UUID.fromString(data.getString(dataPath + ".owner"));
-//
-//                int x = data.getInt(dataPath + ".location.x");
-//                int y = data.getInt(dataPath + ".location.y");
-//                int z = data.getInt(dataPath + ".location.z");
-//                World world = Bukkit.getWorld(data.getString(dataPath + ".location.world"));
-//                Location machineLocation = new Location(world, x, y, z);
-//
-//                ConfigurationSection chestSection = dataSection.getConfigurationSection(machineKey + ".chest-locations");
-//                List<Location> chestLocations = new ArrayList<>();
-//                if (chestSection != null) {
-//                    chestSection.getKeys(false).forEach(location -> {
-//                        int chestX = chestSection.getInt(location + ".x");
-//                        int chestY = chestSection.getInt(location + ".y");
-//                        int chestZ = chestSection.getInt(location + ".z");
-//                        World chestWorld = Bukkit.getWorld(chestSection.getString(location + ".world"));
-//                        chestLocations.add(new Location(chestWorld, chestX, chestY, chestZ));
-//                    });
-//                }
-//                List<MachineItem> stock = loadMachineStock(dataPath);
-//
-//                if (path.contains("vending-machine")) {
-//                    double profit = data.getDouble(dataPath + ".profit");
-//                    VendingMachine vendingMachine = new VendingMachine(uuid, machineLocation, stock, chestLocations,
-//                            profit);
-//                    vendingMachine.registerMachine();
-//
-//                } else if (path.contains("trading-machine")) {
-//                    double machineBalance = data.getDouble(dataPath + ".machine-balance");
-//                    TradingMachine tradingMachine = new TradingMachine(uuid, machineLocation, stock, chestLocations,
-//                            machineBalance);
-//                    tradingMachine.registerMachine();
-//                }
-//            });
-//
-//        data.set(path.replace(".", ""), null);
-//        plugin.saveMachineData();
-//    }
-//
-//    private List<MachineItem> loadMachineStock(String dataPath) {
-//        data = plugin.getMachineData();
-//        ConfigurationSection stockSection = data.getConfigurationSection(dataPath + ".stock");
-//        List<MachineItem> stock = new ArrayList<MachineItem>();
-//        if (stockSection == null)
-//            return stock;
-//
-//        stockSection.getKeys(false).forEach(itemKey -> {
-//            String path = dataPath + ".stock." + itemKey;
-//            ItemStack item = data.getItemStack(path + ".item");
-//            double price = data.getDouble(path + ".sell-price");
-//            int sellAmount = data.getInt(path + ".sell-amount");
-//            int stockAmount = data.getInt(path + ".stock-amount");
-//
-//            MachineItem machineItem = new MachineItem(item, sellAmount, price, stockAmount);
-//            stock.add(machineItem);
-//        });
-//        return stock;
-//    }
-//}
+package me.wmorales01.mycteriaeconomy.files;
+
+import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
+import me.wmorales01.mycteriaeconomy.models.*;
+import me.wmorales01.mycteriaeconomy.util.LogUtil;
+import me.wmorales01.mycteriaeconomy.util.YAMLUtil;
+import org.bukkit.Location;
+import org.bukkit.block.Chest;
+import org.bukkit.configuration.file.FileConfiguration;
+
+import java.io.File;
+import java.util.List;
+import java.util.UUID;
+
+public class MachineManager {
+    private final MycteriaEconomy plugin;
+
+    public MachineManager(MycteriaEconomy plugin) {
+        this.plugin = plugin;
+    }
+
+    /**
+     * Saves the passed machine into its respective .yml file.
+     *
+     * @param machine machine that will be saved in a .yml file
+     */
+    public void saveMachine(AbstractMachine machine) {
+        MachineFile machineFile = new MachineFile(plugin, machine);
+        FileConfiguration machineData = machineFile.getData();
+        machineData.set("owner-uuid", machine.getOwnerUuid().toString());
+        YAMLUtil.saveBlockLocationToYaml(machine.getMachineLocation(), machineData, "location");
+        YAMLUtil.saveLinkedChests(machine.getLinkedChests(), machineData);
+        YAMLUtil.saveMachineItems(machine.getShopItems(), machineData);
+        if (machine instanceof VendingMachine) {
+            VendingMachine vendingMachine = (VendingMachine) machine;
+            machineData.set("profit", vendingMachine.getProfit());
+        } else if (machine instanceof TradingMachine) {
+            TradingMachine tradingMachine = (TradingMachine) machine;
+            machineData.set("balance", tradingMachine.getBalance());
+        }
+        machineFile.saveData();
+    }
+
+    /**
+     * Saves all the currently loaded machines to their corresponding .yml files.
+     */
+    public void saveMachines() {
+        for (AbstractMachine machine : plugin.getMachines().values()) {
+            saveMachine(machine);
+        }
+        plugin.getMachines().clear();
+    }
+
+    /**
+     * Loads the machine that corresponds with the passed UUID, it will handle the data load differently depending on
+     * the machine type.
+     *
+     * @param machineUuidString UUID of the machine as a String
+     * @param shopType          the MachineType of the machine that will be loaded
+     * @return the Machine instance corresponding the passed UUID
+     */
+    public AbstractMachine loadMachine(String machineUuidString, ShopType shopType) {
+        MachineFile machineFile = new MachineFile(plugin, machineUuidString, shopType);
+        FileConfiguration machineData = machineFile.getData();
+        String ownerUuidString = machineData.getString("owner-uuid");
+        Location machineLocation = YAMLUtil.loadLocationFromYaml(machineData, "location");
+        if (machineLocation == null) {
+            LogUtil.sendWarnLog("There was an error loading Machine with UUID '" + machineUuidString + "'.");
+            return null;
+        }
+        List<Chest> linkedChests = YAMLUtil.loadLinkedChests(machineData);
+        List<ShopItem> shopItems = YAMLUtil.loadMachineItems(machineData);
+        // Parsing String data
+        UUID machineUuid = UUID.fromString(machineUuidString);
+        if (ownerUuidString == null) {
+            LogUtil.sendWarnLog("Invalid owner UUID provided in machine file " + machineData.getName() + ".");
+            return null;
+        }
+        UUID ownerUuid = UUID.fromString(ownerUuidString);
+        if (shopType == ShopType.VENDING) {
+            double profit = machineData.getDouble("profit");
+            return new VendingMachine(linkedChests, shopItems, machineUuid, ownerUuid, machineLocation, profit);
+        } else {
+            double balance = machineData.getDouble("balance");
+            return new TradingMachine(linkedChests, shopItems, machineUuid, ownerUuid, machineLocation, balance);
+        }
+    }
+
+    /**
+     * Loads all the machines existing on the machines directory on the plugin's folder.
+     */
+    public void loadMachines() {
+        File machinesDirectory = new File(plugin.getDataFolder() + "/machines/");
+        for (ShopType shopType : ShopType.values()) {
+            File machinesSubdirectory = new File(machinesDirectory, "/" + shopType.name() + "/");
+            if (machinesSubdirectory.listFiles() == null) continue;
+            for (File machineFile : machinesSubdirectory.listFiles()) {
+                // Getting the uuid from the .yml file name.
+                String machineUuidString = machineFile.getName().split("\\.")[0];
+                AbstractMachine machine = loadMachine(machineUuidString, shopType);
+                if (machine == null) continue;
+
+                machine.registerMachine();
+            }
+        }
+    }
+
+    /**
+     * Deletes the passed machine's .yml file.
+     *
+     * @param machine Abstract Machine to be deleted.
+     */
+    public void deleteMachine(AbstractMachine machine) {
+        MachineFile machineFile = new MachineFile(plugin, machine);
+        File dataFile = machineFile.getDataFile();
+        try {
+            dataFile.delete();
+        } catch (Exception e) {
+            LogUtil.sendWarnLog("There was an error deleting Machine with UUID '" + machine.getMachineUuid().toString() +
+                    "'.");
+            e.printStackTrace();
+        }
+    }
+}

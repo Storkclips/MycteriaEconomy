@@ -1,157 +1,130 @@
 package me.wmorales01.mycteriaeconomy.models;
 
-import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import me.wmorales01.mycteriaeconomy.inventories.MachineHolder;
-import me.wmorales01.mycteriaeconomy.util.BalanceUtil;
-import me.wmorales01.mycteriaeconomy.util.Framer;
-import me.wmorales01.mycteriaeconomy.util.Messager;
-import org.bukkit.*;
+import me.wmorales01.mycteriaeconomy.util.GUIUtil;
+import me.wmorales01.mycteriaeconomy.util.StringUtil;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.Chest;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.UUID;
 
-public class TradingMachine extends Machine {
-    private double machineBalance;
+public class TradingMachine extends AbstractMachine implements TradingShop {
+    private double balance; // Money available to purchase other player's items
 
-    public TradingMachine() {
-
+    public TradingMachine(Player owner, Block machineBlock) {
+        super(owner, machineBlock);
+        this.balance = 0;
     }
 
-    public TradingMachine(Player owner, Location location) {
-        super(owner.getUniqueId(), location);
-        setMachineBalance(0);
+    public TradingMachine(List<Chest> linkedChests, List<ShopItem> shopItems, UUID machineUuid, UUID ownerUuid,
+                          Location machineLocation, double balance) {
+        super(linkedChests, shopItems, machineUuid, ownerUuid, machineLocation);
+        this.balance = balance;
     }
 
-    public TradingMachine(UUID ownerUuid, Location location, List<MachineItem> stock, List<Location> chestLocations,
-                          double balance) {
-        super(ownerUuid, location, stock, chestLocations);
-        this.setMachineBalance(balance);
-    }
-
+    /**
+     * Returns the ItemStack corresponding to a Trading Machine
+     *
+     * @return the Trading Machine ItemStack
+     */
     public static ItemStack getItemStack() {
-        ItemStack machine = new ItemStack(Material.DISPENSER);
-        ItemMeta meta = machine.getItemMeta();
-
-        meta.setDisplayName(ChatColor.RESET + "Trading Machine");
-        machine.setItemMeta(meta);
-
-        return machine;
-    }
-
-    public double getMachineBalance() {
-        return machineBalance;
-    }
-
-    public void setMachineBalance(double balance) {
-        this.machineBalance = balance;
-    }
-
-    public void addMachineBalance(double amount) {
-        machineBalance += amount;
-    }
-
-    public void reduceMachineBalance(double amount) {
-        machineBalance -= amount;
-    }
-
-    public void withdrawMachineBalance() {
-        Player player = Bukkit.getPlayer(getOwnerUUID());
-
-        BalanceUtil.giveBalance(player, machineBalance);
-        DecimalFormat format = new DecimalFormat("#.##");
-        Messager.sendMessage(player, "&aYou received &e&l" + format.format(machineBalance) + "$ &afrom this" +
-                " Trading Machine.");
-
-        machineBalance = 0;
-    }
-
-    @Override
-    public void registerMachine() {
-        MycteriaEconomy plugin = MycteriaEconomy.getInstance();
-        plugin.getTradingMachines().add(this);
-    }
-
-    @Override
-    public Inventory getOwnerGUI(Player player) {
-        OfflinePlayer owner = Bukkit.getOfflinePlayer(getOwnerUUID());
-        Inventory inventory = Bukkit.createInventory(new MachineHolder(getLocation()), 54);
-
-        Framer.setInventoryFrame(inventory, Material.LIME_STAINED_GLASS_PANE);
-        setStockInventory(inventory);
-
-        ItemStack item = new ItemStack(Material.SUNFLOWER);
+        ItemStack item = new ItemStack(Material.DROPPER);
         ItemMeta meta = item.getItemMeta();
-
-        meta.setDisplayName(ChatColor.GREEN + "Collect balance");
         List<String> lore = new ArrayList<>();
-        DecimalFormat format = new DecimalFormat("#.##");
-        lore.add(ChatColor.YELLOW + "Balance: " + format.format(machineBalance));
+        meta.setDisplayName(StringUtil.formatColor("&rTrading Machine"));
+        lore.add(StringUtil.formatColor("&ePlace this block to install a Trading Machine"));
         meta.setLore(lore);
+        ;
         item.setItemMeta(meta);
-
-        inventory.setItem(49, item);
-
-        for (Entry<ItemStack, Integer> entry : getChestStock().entrySet()) {
-            item = entry.getKey().clone();
-            meta = item.getItemMeta();
-            int amount = entry.getValue();
-            if (isMachineItem(item))
-                continue;
-
-            lore.clear();
-            lore.add(ChatColor.BLUE + "Amount: " + amount);
-            meta.setLore(lore);
-            item.setItemMeta(meta);
-            Map<Integer, ItemStack> remaining = inventory.addItem(item);
-            if (remaining.isEmpty())
-                continue;
-
-            Messager.sendErrorMessage(player,
-                    "&cThere are items that weren't added to the edit view because it is currently full.");
-            break;
-        }
-        return inventory;
+        return item;
     }
 
     @Override
-    public Inventory getSellingGUI() {
-        OfflinePlayer owner = Bukkit.getOfflinePlayer(getOwnerUUID());
-        Inventory inventory = Bukkit.createInventory(new MachineHolder(getLocation()), 54);
-        ((MachineHolder) inventory.getHolder()).setBalance(0);
-
-        Framer.setInventoryFrame(inventory, Material.LIME_STAINED_GLASS_PANE);
-        setStockInventory(inventory);
-
-        ItemStack item = new ItemStack(Material.PAPER);
-        ItemMeta meta = item.getItemMeta();
-
-        meta.setDisplayName(ChatColor.AQUA + "INFO");
-        List<String> lore = new ArrayList<String>();
-        lore.add(ChatColor.GOLD
-                + "Put your wallet on the side to use the machine.");
-        lore.add(ChatColor.GOLD + "Click any of the offers to sell the selected item.");
-        meta.setLore(lore);
-        item.setItemMeta(meta);
-
-        inventory.setItem(49, item);
-
-        item.setType(Material.SUNFLOWER);
-        DecimalFormat format = new DecimalFormat("#.##");
-        meta.setDisplayName(ChatColor.YELLOW + "Machine Balance: " + format.format(machineBalance));
-        lore.clear();
-        meta.setLore(lore);
-        item.setItemMeta(meta);
-        inventory.setItem(48, item);
-        inventory.setItem(50, null);
-
+    public Inventory getShopGUI() {
+        updateShopItemsStock();
+        int inventorySize = GUIUtil.getFramedInventorySize(getShopItems().size());
+        Inventory inventory = Bukkit.createInventory(new MachineHolder(this, true), inventorySize, "Trading Machine");
+        GUIUtil.setFrame(inventory, Material.LIME_STAINED_GLASS_PANE);
+        addShopItemsToInventory(inventory, true);
+        GUIUtil.fillEmpty(inventory, Material.YELLOW_STAINED_GLASS_PANE);
+        inventory.setItem(inventorySize - 5, null); // Opening Wallet Slot
+        addShopGUIInfoItems(inventory);
         return inventory;
+    }
+
+    /**
+     * Adds information items to the bottom of the passed inventory that indicates what can be done in the Shop GUI.
+     *
+     * @param inventory Inventory where info items will be added to.
+     */
+    private void addShopGUIInfoItems(Inventory inventory) {
+        List<String> infoLore = new ArrayList<>();
+        infoLore.add("&aClick any item to sell it directly from your inventory.");
+        infoLore.add("&aThe cost of the item will be paid to your inventory.");
+        infoLore.add("&aIf you put a wallet on the empty slot the cash will be ");
+        infoLore.add("&aput directly to it instead of your inventory.");
+        inventory.setItem(inventory.getSize() - 6, GUIUtil.getGUIItem(Material.COMPASS, "&2Instructions", infoLore));
+    }
+
+    @Override
+    public Inventory getOwnerGUI() {
+        updateShopItemsStock();
+        int inventorySize = GUIUtil.getFramedInventorySize(getShopItems().size());
+        Inventory inventory = Bukkit.createInventory(new MachineHolder(this, false), inventorySize, "Configuring Vending Machine");
+        GUIUtil.setFrame(inventory, Material.LIME_STAINED_GLASS_PANE);
+        addShopItemsToInventory(inventory, false);
+        GUIUtil.fillEmpty(inventory, Material.YELLOW_STAINED_GLASS_PANE);
+        addOwnerGUIBalanceItem(inventory);
+        addOwnerGUIInfoItems(inventory);
+        return inventory;
+    }
+
+    /**
+     * Adds an ItemStack that displays the machine's profit and instructions to collect them.
+     *
+     * @param inventory Inventory where the Profits item will be added to.
+     */
+    private void addOwnerGUIBalanceItem(Inventory inventory) {
+        inventory.setItem(inventory.getSize() - 5, GUIUtil.getGUIItem(Material.SUNFLOWER, "&eBalance: &3&l$" +
+                getBalance(), Arrays.asList("&aClick to collect the machine's balance.")));
+    }
+
+    /**
+     * Adds information items about the Owner GUI to the passed inventory.
+     *
+     * @param inventory Inventory where the info items will be added to.
+     */
+    private void addOwnerGUIInfoItems(Inventory inventory) {
+        List<String> lore = new ArrayList<>();
+        lore.add("&a- &eClick on any of the items from your inventory to add them ");
+        lore.add("&eto the Machine.");
+        lore.add("&a- &eClick on any of the shop items to modify their sell amount or price.");
+        inventory.setItem(inventory.getSize() - 6, GUIUtil.getGUIItem(Material.COMPASS, "&2Instructions", lore));
+    }
+
+    public double getBalance() {
+        return balance;
+    }
+
+    public void setBalance(double balance) {
+        this.balance = balance;
+    }
+
+    public void increaseBalance(double amount) {
+        balance += amount;
+    }
+
+    public void decreaseBalance(double amount) {
+        balance -= amount;
     }
 }

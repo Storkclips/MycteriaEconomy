@@ -1,9 +1,10 @@
 package me.wmorales01.mycteriaeconomy.listeners;
 
 import me.wmorales01.mycteriaeconomy.inventories.WalletHolder;
-import me.wmorales01.mycteriaeconomy.models.EconomyItem;
+import me.wmorales01.mycteriaeconomy.models.CurrencyItem;
 import me.wmorales01.mycteriaeconomy.models.Wallet;
-import me.wmorales01.mycteriaeconomy.util.WalletUtil;
+import me.wmorales01.mycteriaeconomy.util.SFXManager;
+import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -25,11 +26,11 @@ public class WalletHandler implements Listener {
     public void onWalletCraft(PrepareItemCraftEvent event) {
         if (event.getRecipe() == null) return;
         ItemStack result = event.getRecipe().getResult();
-        if (!WalletUtil.isWallet(result)) return;
+        if (!Wallet.isWallet(result)) return;
 
         ItemStack[] craftMatrix = event.getInventory().getMatrix();
         ItemStack bill = craftMatrix[4];
-        if (EconomyItem.isEconomyItem(bill) && EconomyItem.getValueFromItem(bill) == 1) return;
+        if (CurrencyItem.isCurrencyItem(bill) && CurrencyItem.getValueFromItem(bill) == 1) return;
 
         event.getInventory().setResult(null);
     }
@@ -57,6 +58,7 @@ public class WalletHandler implements Listener {
 
         event.setCancelled(true);
         player.openInventory(wallet.getGUI());
+        SFXManager.playPlayerSound(player, Sound.ITEM_ARMOR_EQUIP_LEATHER, 0.6F, 1.4F);
     }
 
     // Listens when a player clicks a GUI, if it is a Wallet GUI and the player is saving an item other than an
@@ -85,7 +87,7 @@ public class WalletHandler implements Listener {
             savedItem = event.getCurrentItem();
         }
         if (savedItem == null || savedItem.getType().isAir()) return;
-        if (EconomyItem.isEconomyItem(savedItem)) return;
+        if (CurrencyItem.isCurrencyItem(savedItem)) return;
 
         event.setCancelled(true);
         player.updateInventory();
@@ -105,7 +107,7 @@ public class WalletHandler implements Listener {
         if (!draggedIntoWallet) return;
         Collection<ItemStack> draggedItems = event.getNewItems().values();
         for (ItemStack item : draggedItems) {
-            if (EconomyItem.isEconomyItem(item)) continue;
+            if (CurrencyItem.isCurrencyItem(item)) continue;
 
             event.setCancelled(true);
             return;
@@ -131,5 +133,6 @@ public class WalletHandler implements Listener {
         }
         player.updateInventory();
         openWallet.saveWalletData();
+        SFXManager.playPlayerSound(player, Sound.ITEM_ARMOR_EQUIP_LEATHER, 0.6F, 0.8F);
     }
 }

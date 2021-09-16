@@ -3,8 +3,9 @@ package me.wmorales01.mycteriaeconomy.listeners;
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
 import me.wmorales01.mycteriaeconomy.inventories.ATMHolder;
 import me.wmorales01.mycteriaeconomy.models.ATM;
-import me.wmorales01.mycteriaeconomy.models.EconomyItem;
+import me.wmorales01.mycteriaeconomy.models.CurrencyItem;
 import me.wmorales01.mycteriaeconomy.models.EconomyPlayer;
+import me.wmorales01.mycteriaeconomy.util.InventoryUtil;
 import me.wmorales01.mycteriaeconomy.util.Messager;
 import me.wmorales01.mycteriaeconomy.util.SFXManager;
 import org.bukkit.Bukkit;
@@ -44,7 +45,7 @@ public class ATMHandler implements Listener {
     public void onATMPlace(BlockPlaceEvent event) {
         Player player = event.getPlayer();
         ItemStack handItem = event.getItemInHand();
-        if (!handItem.isSimilar(ATM.getItemStack())) return;
+        if (!InventoryUtil.isSimilar(handItem, ATM.getItemStack())) return;
         if (!player.hasPermission("economyplugin.createatm")) {
             Messager.sendNoPermissionMessage(player);
             return;
@@ -85,7 +86,7 @@ public class ATMHandler implements Listener {
         Inventory clickedInventory = event.getClickedInventory();
         ATM atm = ((ATMHolder) event.getInventory().getHolder()).getAtm();
         if (clickedItem == null) return;
-        if (!EconomyItem.isEconomyItem(clickedItem)) return;
+        if (!CurrencyItem.isCurrencyItem(clickedItem)) return;
         if (clickedInventory.getType() == InventoryType.CHEST) { // Is withdrawing money
             withdrawBankBalance(atm, economyPlayer, clickedItem);
         } else {
@@ -97,13 +98,13 @@ public class ATMHandler implements Listener {
     // and reopens the passed atm's GUI
     private void withdrawBankBalance(ATM atm, EconomyPlayer economyPlayer, ItemStack economyItem) {
         Player player = economyPlayer.getPlayer();
-        double withdrawValue = EconomyItem.getValueFromItem(economyItem);
+        double withdrawValue = CurrencyItem.getValueFromItem(economyItem);
         if (economyPlayer.getBankBalance() - withdrawValue <= 0) {
             Messager.sendErrorMessage(player, "&cYou don't have enough bank balance to execute this transaction.");
             return;
         }
         economyPlayer.decreaseBankBalance(withdrawValue);
-        ItemStack withdrawnItem = EconomyItem.getItemFromValue(withdrawValue);
+        ItemStack withdrawnItem = CurrencyItem.getItemFromValue(withdrawValue);
         if (withdrawnItem == null) return;
         Location playerLocation = player.getLocation();
         if (player.getInventory().firstEmpty() == -1) {
@@ -118,7 +119,7 @@ public class ATMHandler implements Listener {
     // Deposit the passed balanceItem's value to the passed economyPlayer's bank account and reopens the
     // passed atm's GUI after deleting the clicked economyItem
     private void depositBankBalance(ATM atm, EconomyPlayer economyPlayer, ItemStack economyItem) {
-        double depositValue = EconomyItem.getValueFromItem(economyItem);
+        double depositValue = CurrencyItem.getValueFromItem(economyItem);
         economyPlayer.increaseBankBalance(depositValue * economyItem.getAmount());
         economyItem.setAmount(0);
 

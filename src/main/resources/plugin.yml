@@ -2,23 +2,16 @@ main: me.wmorales01.mycteriaeconomy.MycteriaEconomy
 name: MycteriaEconomy
 version: 0.1
 author: Wmorales01
+depend: [ HolographicDisplays ]
 
 api-version: 1.16
 
 commands:
+  economy:
+
   npcshop:
 
-  gui:
-
-  cash:
-
-  wallet:
-
-  setbalance:
-
   removecash:
-
-  atm:
 
   linkmachine:
 

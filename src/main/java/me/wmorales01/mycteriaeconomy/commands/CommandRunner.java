@@ -1,11 +1,12 @@
 package me.wmorales01.mycteriaeconomy.commands;
 
 import me.wmorales01.mycteriaeconomy.MycteriaEconomy;
-import me.wmorales01.mycteriaeconomy.models.Machine;
+import me.wmorales01.mycteriaeconomy.models.AbstractMachine;
 import me.wmorales01.mycteriaeconomy.util.Messager;
+import me.wmorales01.mycteriaeconomy.util.SFXManager;
 import org.bukkit.Material;
+import org.bukkit.Sound;
 import org.bukkit.block.Block;
-import org.bukkit.block.Chest;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -13,9 +14,10 @@ import org.bukkit.entity.Player;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public class CommandRunner implements CommandExecutor {
-    private MycteriaEconomy plugin;
+    private final MycteriaEconomy plugin;
 
     public CommandRunner(MycteriaEconomy plugin) {
         this.plugin = plugin;
@@ -33,7 +35,7 @@ public class CommandRunner implements CommandExecutor {
 
     private boolean runSubcommand(CommandSender sender, Command cmd, String[] args) {
         String ranCommand = cmd.getName();
-        Map<String, ? extends Subcommand> potentialSubcommands;
+        Map<String, ? extends AbstractSubcommand> potentialSubcommands;
         if (ranCommand.equalsIgnoreCase("economy")) {
             potentialSubcommands = plugin.getEconomySubcommands();
         } else if (ranCommand.equalsIgnoreCase("npcshop")) {
@@ -50,50 +52,37 @@ public class CommandRunner implements CommandExecutor {
                     " help &cto see the full command list.");
             return true;
         }
-        Subcommand subcommand = potentialSubcommands.get(args[0].toLowerCase());
-        if (!sender.hasPermission(subcommand.getPermission())) {
+        AbstractSubcommand abstractSubcommand = potentialSubcommands.get(args[0].toLowerCase());
+        if (!sender.hasPermission(abstractSubcommand.getPermission())) {
             Messager.sendNoPermissionMessage(sender);
             return true;
         }
-        if (subcommand.isPlayerCommand() && !(sender instanceof Player)) {
+        if (abstractSubcommand.isPlayerCommand() && !(sender instanceof Player)) {
             Messager.sendErrorMessage(sender, "&cNot available for consoles.");
             return true;
         }
-        if (subcommand.isConsoleCommand() && sender instanceof Player) {
+        if (abstractSubcommand.isConsoleCommand() && sender instanceof Player) {
             Messager.sendErrorMessage(sender, "&cNot available for players.");
             return true;
         }
-        if (args.length < subcommand.getArgumentLength()) {
-            Messager.sendErrorMessage(sender, "&cUsage: &l" + subcommand.getUsageMessage());
+        if (args.length < abstractSubcommand.getArgumentLength()) {
+            Messager.sendErrorMessage(sender, "&cUsage: &l" + abstractSubcommand.getUsageMessage());
             return true;
         }
-        subcommand.execute(sender, args);
+        abstractSubcommand.execute(sender, args);
         return true;
     }
 
     private boolean runCommand(CommandSender sender, Command cmd, String[] args) {
+        if (!(sender instanceof Player)) {
+            Messager.sendErrorMessage(sender, "&cNot available for consoles.");
+            return true;
+        }
+        Player player = (Player) sender;
         if (cmd.getName().equalsIgnoreCase("linkmachine")) {
-            if (!(sender instanceof Player)) {
-                Messager.sendErrorMessage(sender, "&cNot available for consoles.");
-                return true;
-            }
-            Player player = (Player) sender;
-            if (!plugin.getMachineLinkers().containsKey(player)) {
-                Block lookedBlock = player.getTargetBlock((Set<Material>) null, 5);
-                Machine machine = Machine.getMachineAtLocation(lookedBlock.getLocation());
-                if (machine == null) {
-                    Messager.sendErrorMessage(player, "&cYou must be targeting the machine you want to link.");
-                }
-                plugin.getMachineLinkers().put((player), machine);
-                Messager.sendMessage(sender, "&aYou must now click the chest you want to link the machine to.");
-
-            } else {
-                plugin.getMachineLinkers().remove(player);
-                Messager.sendSuccessMessage(player, "&cYou are not linking machines anymore.");
-            }
-
+            handleLinkStorageCommand(player);
         } else if (cmd.getName().equalsIgnoreCase("linknpc")) {
-            if (!(sender instanceof Player)) {
+            /*if (!(sender instanceof Player)) {
                 Messager.sendErrorMessage(sender, "&cNot available for consoles.");
                 return true;
             }
@@ -114,8 +103,26 @@ public class CommandRunner implements CommandExecutor {
             } else {
                 plugin.getNpcLinkers().remove(player);
                 Messager.sendSuccessMessage(player, "&cYou are not linking NPCs anymore.");
-            }
+            }*/
         }
         return true;
+    }
+
+    private void handleLinkStorageCommand(Player player) {
+        UUID playerUuid = player.getUniqueId();
+        if (!plugin.getMachineLinkers().containsKey(playerUuid)) {
+            Block targetedBlock = player.getTargetBlock((Set<Material>) null, 5);
+            AbstractMachine machine = AbstractMachine.fromLocation(targetedBlock.getLocation());
+            if (machine == null) {
+                Messager.sendErrorMessage(player, "&cYou must be targeting the machine you want to link.");
+                return;
+            }
+            plugin.getMachineLinkers().put(playerUuid, machine);
+            Messager.sendMessage(player, "&eRight Click the chests you want to link to this machine.");
+            SFXManager.playPlayerSound(player, Sound.BLOCK_NOTE_BLOCK_IRON_XYLOPHONE, 0.6F, 1.4F);
+            return;
+        }
+        plugin.getMachineLinkers().remove(playerUuid);
+        Messager.sendErrorMessage(player, "&cYou are not linking machines anymore.");
     }
 }

@@ -78,9 +78,9 @@ public class ATM {
     }
 
     private void addEconomyItems(Inventory inventory) {
-        inventory.setItem(22, getATMItem(EconomyItem.oneHundredDollarBill()));
-        for (ItemStack economyItem : EconomyItem.getEconomyItems()) {
-            if (EconomyItem.getValueFromItem(economyItem) == 100) continue;
+        inventory.setItem(22, getATMItem(CurrencyItem.oneHundredDollarBill()));
+        for (ItemStack economyItem : CurrencyItem.getEconomyItems()) {
+            if (CurrencyItem.getValueFromItem(economyItem) == 100) continue;
 
             inventory.addItem(getATMItem(economyItem));
         }
@@ -89,7 +89,7 @@ public class ATM {
     private ItemStack getATMItem(ItemStack economyItem) {
         ItemMeta meta = economyItem.getItemMeta();
         meta.setDisplayName(StringUtil.formatColor("&2&l$" +
-                StringUtil.roundNumber(EconomyItem.getValueFromItem(economyItem), 2)));
+                StringUtil.roundNumber(CurrencyItem.getValueFromItem(economyItem), 2)));
         meta.setLore(Arrays.asList(StringUtil.formatColor("&eClick here to withdraw.")));
         economyItem.setItemMeta(meta);
         return economyItem;
