@@ -1,18 +1,9 @@
-main: me.wmorales01.mycteriaeconomy.MycteriaEconomy
 name: MycteriaEconomy
-version: 0.1
-author: Wmorales01
-depend: [ HolographicDisplays ]
+version: ${project.version}
+main: ${main.class}
+author: SpiderDeluxe, Wmorales01
+depend: [Citizens]
 
 api-version: 1.16
 
-commands:
-  economy:
 
-  npcshop:
-
-  removecash:
-
-  linkmachine:
-
-  linknpc:
