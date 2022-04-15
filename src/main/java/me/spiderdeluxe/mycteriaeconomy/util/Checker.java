@@ -1,6 +1,5 @@
 package me.spiderdeluxe.mycteriaeconomy.util;
 
-import me.spiderdeluxe.mycteriaeconomy.models.CurrencyItem;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -56,6 +55,8 @@ public class Checker {
 
     public static ItemStack findSimiliarInInv(final Inventory inventory, final ItemStack firstItem) {
         for (final ItemStack secondItem : inventory.getContents()) {
+            if (firstItem == null) return null;
+
             if (secondItem != null)
                 if (isSimilar(firstItem.clone(), secondItem.clone())) {
                     return secondItem;

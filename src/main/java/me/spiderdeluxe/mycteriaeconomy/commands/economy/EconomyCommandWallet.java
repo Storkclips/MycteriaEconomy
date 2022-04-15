@@ -8,7 +8,7 @@ import org.mineacademy.fo.command.SimpleCommandGroup;
 import org.mineacademy.fo.command.SimpleSubCommand;
 
 /**
- * @author wmorale01, SpiderDeluxe
+ * @author  SpiderDeluxe
  * This command is used to give you a new Wallet.
  */
 public class EconomyCommandWallet extends SimpleSubCommand {

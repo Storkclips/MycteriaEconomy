@@ -1,8 +1,8 @@
 package me.spiderdeluxe.mycteriaeconomy.models.npc;
 
 import me.spiderdeluxe.mycteriaeconomy.MycteriaEconomyPlugin;
+import me.spiderdeluxe.mycteriaeconomy.models.npc.operator.NPCOperation;
 import me.spiderdeluxe.mycteriaeconomy.models.npc.operator.NPCOperator;
-import me.spiderdeluxe.mycteriaeconomy.models.npc.operator.NPCShopOperation;
 import me.spiderdeluxe.mycteriaeconomy.models.shop.Shop;
 import me.spiderdeluxe.mycteriaeconomy.util.Messager;
 import me.spiderdeluxe.mycteriaeconomy.util.SFXManager;
@@ -102,12 +102,12 @@ public class NPCListener implements Listener {
 
 			final NPCOperator npcOperator = NPCOperator.getByPlayer(player);
 			assert npcOperator != null;
-			final NPCShopOperation operation = npcOperator.getOperation();
-			if (operation == NPCShopOperation.DELETE) {
+			final NPCOperation operation = npcOperator.getOperation();
+			if (operation == NPCOperation.DELETE) {
 				deleteNpc(player, npcBase);
 				return;
 			}
-			if (operation == NPCShopOperation.LINK && npcBase instanceof NPCShop) {
+			if (operation == NPCOperation.LINK && npcBase instanceof NPCShop) {
 				final Shop shop = ((NPCShop) npcBase).getShop();
 
 				final Chest chest = npcOperator.getLinkingChest();

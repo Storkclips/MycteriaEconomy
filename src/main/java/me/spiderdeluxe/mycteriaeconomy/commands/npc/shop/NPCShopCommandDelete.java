@@ -1,7 +1,7 @@
 package me.spiderdeluxe.mycteriaeconomy.commands.npc.shop;
 
+import me.spiderdeluxe.mycteriaeconomy.models.npc.operator.NPCOperation;
 import me.spiderdeluxe.mycteriaeconomy.models.npc.operator.NPCOperator;
-import me.spiderdeluxe.mycteriaeconomy.models.npc.operator.NPCShopOperation;
 import me.spiderdeluxe.mycteriaeconomy.util.Messager;
 import me.spiderdeluxe.mycteriaeconomy.util.SFXManager;
 import org.bukkit.Sound;
@@ -10,7 +10,7 @@ import org.mineacademy.fo.command.SimpleCommandGroup;
 import org.mineacademy.fo.command.SimpleSubCommand;
 
 /**
- * @author wmorale01, SpiderDeluxe
+ * @author  SpiderDeluxe
  * This command is used to delete a npc shop
  */
 public class NPCShopCommandDelete extends SimpleSubCommand {
@@ -28,12 +28,12 @@ public class NPCShopCommandDelete extends SimpleSubCommand {
 
 		final Player player = (Player) sender;
 		final NPCOperator npcOperator = NPCOperator.getByPlayer(player);
-		if (npcOperator == null || npcOperator.getOperation() != NPCShopOperation.DELETE) {
-            if (npcOperator != null &&
-                    npcOperator.getOperation() != NPCShopOperation.DELETE)
+		if (npcOperator == null || npcOperator.getOperation() != NPCOperation.DELETE) {
+			if (npcOperator != null &&
+					npcOperator.getOperation() != NPCOperation.DELETE)
 				npcOperator.removeOperator();
 			// Start delete session
-			new NPCOperator(player, NPCShopOperation.DELETE);
+			new NPCOperator(player, NPCOperation.DELETE);
 			Messager.sendMessage(player, "&aYou are now deleting all the NPCs you right click.");
 			SFXManager.playPlayerSound(player, Sound.BLOCK_NOTE_BLOCK_XYLOPHONE, 0.6F, 1.4F);
 			return;

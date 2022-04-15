@@ -1,6 +1,6 @@
 package me.spiderdeluxe.mycteriaeconomy.inventories;
 
-import me.spiderdeluxe.mycteriaeconomy.models.CurrencyItem;
+import me.spiderdeluxe.mycteriaeconomy.util.CurrencyItem;
 import me.spiderdeluxe.mycteriaeconomy.util.GUIUtil;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;

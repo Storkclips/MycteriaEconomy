@@ -1,6 +1,6 @@
 # !-------------------------------------------------------------------------------------------------!
 #                       Welcome to the main configuration of ${project.artifactId}
-#                      Created by wmorales01 and Reworked/Developed by SpiderDeluxe
+#                                         Created by SpiderDeluxe
 # !-------------------------------------------------------------------------------------------------!
 
 
@@ -8,29 +8,80 @@
 # Here you can set the main config of the plugin
 # -------------------------------------------------------------------------------------------
 General:
+  Permission:
+    #
+    # This is the permission that allows you to modify state banks and local banks
+    #
+    Edit_MainBanks: "mycteriaeconomy.adminBank"
+    #
+    # This is the permission that allows you to modify all banks
+    #
+    Edit_AllBanks: "mycteriaeconomy.allBanks"
   #
   # Minecraft item that will be used a the wallet item.
   #
   Wallet_Item: LEATHER
   #
-  # How much money will be taxed from each transaction at an ATM
+  # The price for create a business account
   #
-  Atm_Transaction_Fee: 20.0
+  Business_Account_Price: 1000
+  #
+  # Time after which certain transactions are automatically deleted (real lifetime)
+  #
+  Transaction_Time: 5 days
+  Loan:
+    #
+    # How often a penalty is added if you are not paying the debt (real lifetime)
+    #
+    Penalty_Time: 3 minutes
+    Penalty_Percentage: 10
+
+  Commission_Fee:
+    #
+    # How much money percentage will be taxed from a business account every time
+    #
+    Business_Percentage: 20
+    #
+    # How much money percentage will be taxed from a default account every time
+    #
+    Default_Percentage: 10
   #
   # In this section you can set the radius and height where the chests near the selected one are automatically added.
   #
   Linking_Chest:
     Height: 1
     Radius: 1
-  #
-  #
-  #
-  NPC:
+  Shop:
     #
-    # Necessary amount of a shop item to start getting a discount.
-    # Ex. If there is more than 300 stock, apply discount.
     #
-    Stock_Amount_Discount: 300
+    #
+    Display_Name:
+      #
+      # Here the minimum and maximum length of the shop displayName are set
+      #
+      Max_Length: 16
+      Min_Length: 3
+      #
+      # If it is active you cannot give a name containing & to your Shop DisplayName
+      #
+      Uses_Ampersand: true
+Menu:
+  #
+  #
+  #
+  Atm:
+    Sounds:
+      #
+      # You can find the Sounds: https://hub.spigotmc.org/javadocs/bukkit/org/bukkit/Sound.html
+      #
+      Activation:
+        Sound: "BLOCK_CONDUIT_ACTIVATE"
+        Volume: 3.0
+        Pitch: 6.0
+      Deactivation:
+        Sound: "BLOCK_CONDUIT_DEACTIVATE"
+        Volume: 3.0
+        Pitch: 6.0
   #
   #
   #
@@ -47,19 +98,16 @@ General:
         Sound: "BLOCK_CONDUIT_DEACTIVATE"
         Volume: 3.0
         Pitch: 6.0
-    #
-    #
-    #
-    Display_Name:
-      #
-      # Here the minimum and maximum length of the shop displayName are set
-      #
-      Max_Length: 16
-      Min_Length: 3
-      #
-      # If it is active you cannot give a name containing & to your Shop DisplayName
-      #
-      Uses_Ampersand: true
+
+# -------------------------------------------------------------------------------------------------
+# These are the messages you can customize in the plugin
+# -------------------------------------------------------------------------------------------------
+Messages:
+  #
+  #  Message that appears when you don't have the money you need,
+  #  {balance} is the placeholder for the money in the account.
+  #
+  Insufficient_Balance: "Only specify a number inferior/equal to the number of item in your balance: {balance}"
 
 # -------------------------------------------------------------------------------------------------
 # The prefix used in front of most chat or console messages. You can manually use it with

@@ -2,7 +2,7 @@ package me.spiderdeluxe.mycteriaeconomy.models.shop;
 
 import lombok.Getter;
 import me.spiderdeluxe.mycteriaeconomy.models.Wallet;
-import me.spiderdeluxe.mycteriaeconomy.models.shop.menu.ShopMenu;
+import me.spiderdeluxe.mycteriaeconomy.menu.shop.ShopMenu;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;

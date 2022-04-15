@@ -1,8 +1,7 @@
 package me.spiderdeluxe.mycteriaeconomy.models.machine;
 
 import lombok.Getter;
-import me.spiderdeluxe.mycteriaeconomy.cache.ListStorage;
-import me.spiderdeluxe.mycteriaeconomy.cache.PlayerCache;
+import me.spiderdeluxe.mycteriaeconomy.cache.EconomyPlayer;
 import me.spiderdeluxe.mycteriaeconomy.models.shop.Shop;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -10,9 +9,11 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import org.mineacademy.fo.Common;
+import org.mineacademy.fo.collection.SerializedMap;
 import org.mineacademy.fo.menu.model.ItemCreator;
+import org.mineacademy.fo.model.ConfigSerializable;
 import org.mineacademy.fo.remain.CompMaterial;
+import org.mineacademy.fo.remain.Remain;
 
 import java.util.*;
 
@@ -20,7 +21,7 @@ import java.util.*;
  * @author SpiderDeluxe
  * This class deals with the management of machine
  */
-public class Machine {
+public class Machine implements ConfigSerializable {
 	/**
 	 * Stores active machine by their UUID, machine are singletons
 	 */
@@ -59,20 +60,6 @@ public class Machine {
 		this.uuid = uuid;
 	}
 
-
-	public static void loadAll() {
-		byUUID.clear();
-		ListStorage.getInstance().loadConfiguration(null, "data.db");
-
-		for (final String machineUUID : ListStorage.getInstance().getMachinesList()) {
-			final PlayerCache cache = PlayerCache.getCache(UUID.fromString(machineUUID));
-
-			for (final PlayerCache.ActiveMachine activeMachine : cache.getMachines())
-				byUUID.put(activeMachine.getMachine().getUuid(), activeMachine.getMachine());
-		}
-		Common.log("Active Machine: " + byUUID.size());
-	}
-
 	// --------------------------------------------------------------------------------------------------------------
 	// Machine manipulation static access
 	// --------------------------------------------------------------------------------------------------------------
@@ -84,10 +71,7 @@ public class Machine {
 
 		final Machine machine = new Machine(player, location, shop, uuid);
 
-		final ListStorage storage = ListStorage.getInstance();
-		storage.addMachine(player);
-
-		final PlayerCache cache = PlayerCache.getCache(player);
+		final EconomyPlayer cache = EconomyPlayer.from(player);
 		cache.addMachine(machine);
 
 		byUUID.put(uuid, machine);
@@ -98,11 +82,11 @@ public class Machine {
 
 		shop.deleteShop();
 
-		final PlayerCache cache = PlayerCache.getCache(player);
-		cache.removeMachine(machine);
+		if (player.getPlayer() != null)
+			return;
 
-		final ListStorage storage = ListStorage.getInstance();
-		storage.removeMachine(machine);
+		final EconomyPlayer cache = EconomyPlayer.from(player.getPlayer());
+		cache.removeMachine(machine);
 
 		byUUID.remove(uuid, machine);
 	}
@@ -212,4 +196,33 @@ public class Machine {
 		return Collections.unmodifiableSet(byUUID.keySet());
 	}
 
+	// --------------------------------------------------------------------------------------------------------------
+	// Deserialization methods
+	// --------------------------------------------------------------------------------------------------------------
+
+	@Override
+	public SerializedMap serialize() {
+		final SerializedMap map = new SerializedMap();
+
+		map.put("UUID", getUuid());
+		map.put("Location", getLocation());
+		map.put("Shop", getShop().getName());
+		map.put("Player", getPlayer().getUniqueId());
+
+		return map;
+	}
+
+	public static Machine deserialize(final SerializedMap map) {
+
+
+		final UUID machineUUID = map.getUUID("UUID");
+		final Location location = map.getLocation("Location");
+
+		final String shopName = map.getString("Shop");
+		final Shop shop = Shop.alreadyExist(shopName) ? Shop.findShop(shopName) : Shop.createShop(shopName);
+
+		final OfflinePlayer owner = Remain.getOfflinePlayerByUUID(map.getUUID("Player"));
+
+		return new Machine(owner, location, shop, machineUUID);
+	}
 }

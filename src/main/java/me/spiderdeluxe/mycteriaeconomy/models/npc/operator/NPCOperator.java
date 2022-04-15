@@ -20,11 +20,11 @@ public class NPCOperator {
     private static final Map<UUID, NPCOperator> byUUID = new HashMap<>();
 
     private final Player player;
-    private final NPCShopOperation operation;
+    private final NPCOperation operation;
     private final Chest linkingChest;
     private final EquipmentSlot configuringSlot;
 
-    public NPCOperator(final Player player, final NPCShopOperation operation) {
+    public NPCOperator(final Player player, final NPCOperation operation) {
         this.player = player;
         this.operation = operation;
         this.linkingChest = null;
@@ -33,7 +33,7 @@ public class NPCOperator {
         byUUID.put(player.getUniqueId(), this);
     }
 
-    public NPCOperator(final Player player, final NPCShopOperation operation, final Chest linkingChest) {
+    public NPCOperator(final Player player, final NPCOperation operation, final Chest linkingChest) {
         this.player = player;
         this.operation = operation;
         this.linkingChest = linkingChest;
@@ -42,7 +42,7 @@ public class NPCOperator {
         byUUID.put(player.getUniqueId(), this);
     }
 
-    public NPCOperator(final Player player, final NPCShopOperation operation, final EquipmentSlot configuringSlot) {
+    public NPCOperator(final Player player, final NPCOperation operation, final EquipmentSlot configuringSlot) {
         this.player = player;
         this.operation = operation;
         this.linkingChest = null;

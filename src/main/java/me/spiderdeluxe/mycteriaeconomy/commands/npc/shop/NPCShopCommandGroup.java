@@ -1,5 +1,6 @@
 package me.spiderdeluxe.mycteriaeconomy.commands.npc.shop;
 
+import me.spiderdeluxe.mycteriaeconomy.commands.npc.NPCCommandLink;
 import org.mineacademy.fo.command.SimpleCommandGroup;
 
 /**
@@ -15,7 +16,7 @@ public class NPCShopCommandGroup extends SimpleCommandGroup {
 		registerSubcommand(new NPCShopCommandDelete(this));
 
 		//Managing shop commands
-		registerSubcommand(new NPCShopCommandLink(this));
+		registerSubcommand(new NPCCommandLink(this));
 	}
 
 	@Override

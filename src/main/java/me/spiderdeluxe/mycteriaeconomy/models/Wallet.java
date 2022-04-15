@@ -97,7 +97,7 @@ public class Wallet {
         return walletUuid.equals(uuid);
     }
 
-    public ItemStack getItemStack() {
+    public  ItemStack getItemStack() {
         final ItemStack item = new ItemStack(Settings.General.WALLET_ITEM);
         final ItemMeta meta = item.getItemMeta();
         final List<String> lore = new ArrayList<>();

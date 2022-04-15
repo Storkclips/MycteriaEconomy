@@ -4,6 +4,7 @@ import lombok.Getter;
 
 public enum NPCFunction {
 	SHOP("SHOP"),
+	TELLER("TELLER"),
 	ATM("ATM");
 
 	@Getter
@@ -14,12 +15,11 @@ public enum NPCFunction {
 	}
 
 	public static NPCFunction fromName(final String name) {
-		switch (name) {
-			case "SHOP":
-				return SHOP;
-			case "ATM":
-				return ATM;
-		}
-		return null;
+		return switch (name) {
+			case "TELLER" -> TELLER;
+			case "SHOP" -> SHOP;
+			case "ATM" -> ATM;
+			default -> null;
+		};
 	}
 }

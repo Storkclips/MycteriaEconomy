@@ -5,9 +5,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
-import java.util.List;
-import java.util.ListIterator;
-
 public class GUIUtil {
 
     public static void setFrame(final Inventory inventory, final Material frameMaterial) {
@@ -30,21 +27,6 @@ public class GUIUtil {
             inventory.setItem(emptySlot, filler);
             emptySlot = inventory.firstEmpty();
         }
-    }
-
-    public static ItemStack getGUIItem(final Material material, final String name, final List<String> lore) {
-        final ItemStack item = new ItemStack(material);
-        final ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName(StringUtil.formatColor(name));
-        if (lore != null) {
-            final ListIterator<String> loreIterator = lore.listIterator();
-            while (loreIterator.hasNext()) {
-                loreIterator.set(StringUtil.formatColor(loreIterator.next()));
-            }
-            meta.setLore(lore);
-        }
-        item.setItemMeta(meta);
-        return item;
     }
 
     public static int getFramedInventorySize(final int itemAmount) {

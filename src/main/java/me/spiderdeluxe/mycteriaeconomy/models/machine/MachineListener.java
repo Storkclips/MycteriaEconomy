@@ -2,8 +2,8 @@ package me.spiderdeluxe.mycteriaeconomy.models.machine;
 
 import me.spiderdeluxe.mycteriaeconomy.models.shop.Shop;
 import me.spiderdeluxe.mycteriaeconomy.models.shop.ShopListener;
-import me.spiderdeluxe.mycteriaeconomy.models.shop.conversation.ShopSetupPrompt;
-import me.spiderdeluxe.mycteriaeconomy.models.shop.menu.ShopMenu;
+import me.spiderdeluxe.mycteriaeconomy.conversation.shop.ShopSetupPrompt;
+import me.spiderdeluxe.mycteriaeconomy.menu.shop.ShopMenu;
 import me.spiderdeluxe.mycteriaeconomy.util.Messager;
 import me.spiderdeluxe.mycteriaeconomy.util.SFXManager;
 import org.bukkit.Material;

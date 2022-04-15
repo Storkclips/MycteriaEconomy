@@ -6,7 +6,7 @@ import org.mineacademy.fo.command.SimpleCommandGroup;
 import org.mineacademy.fo.command.SimpleSubCommand;
 
 /**
- * @author wmorale01, SpiderDeluxe
+ * @author  SpiderDeluxe
  * This command is used to open a GUI with all the available currency items.
  */
 public class EconomyCommandCurrency extends SimpleSubCommand {

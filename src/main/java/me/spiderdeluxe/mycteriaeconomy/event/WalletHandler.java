@@ -1,8 +1,8 @@
 package me.spiderdeluxe.mycteriaeconomy.event;
 
 import me.spiderdeluxe.mycteriaeconomy.inventories.WalletHolder;
-import me.spiderdeluxe.mycteriaeconomy.models.CurrencyItem;
 import me.spiderdeluxe.mycteriaeconomy.models.Wallet;
+import me.spiderdeluxe.mycteriaeconomy.util.CurrencyItem;
 import me.spiderdeluxe.mycteriaeconomy.util.SFXManager;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;

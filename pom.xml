@@ -53,10 +53,10 @@
         <main.class>me.spiderdeluxe.mycteriaeconomy.MycteriaEconomyPlugin</main.class>
 
         <!-- The Foundation version - change to latest version from https://github.com/kangarko/Foundation/releases -->
-        <foundation.version>5.11.2</foundation.version>
+        <foundation.version>5.12.5</foundation.version>
 
         <!-- The Java version your plugin uses, see bstats.org for what most servers have and use that -->
-        <java.version>11</java.version>
+        <java.version>16</java.version>
 
         <!-- How letters in your code should be saved on your disk, leave to UTF-8 to support all languages -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -97,6 +97,7 @@
     </repositories>
 
     <dependencies>
+        <!--
         <dependency>
             <groupId>org.spigotmc</groupId>
             <artifactId>spigot</artifactId>
@@ -105,11 +106,17 @@
             <scope>system</scope>
             <systemPath>C:\Users\Fabry\Desktop\Plugin Development\Fiverr Server\1.16\cache\patched_1.16.5.jar</systemPath>
         </dependency>
+        -->
         <dependency>
             <groupId>com.ticxo.modelengine</groupId>
             <artifactId>api</artifactId>
             <version>R2.2.0</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.github.elBukkit</groupId>
+            <artifactId>EffectLib</artifactId>
+            <version>master-5533225c8f-1</version>
         </dependency>
         <!--
            Import the Foundation library to kickstart our plugin development
@@ -145,7 +152,7 @@
 
                 <!-- Change version to the latest one from
                      https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-jar-plugin -->
-                <version>3.2.0</version>
+                <version>3.2.1</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -156,8 +163,8 @@
                -->
                 <version>3.8.1</version>
                 <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
+                    <source>16</source>
+                    <target>16</target>
                 </configuration>
             </plugin>
 
@@ -172,7 +179,7 @@
                    You want to check and update the latest version periodically from
                    https://mvnrepository.com/artifact/org.apache.maven.plugins/maven-shade-plugin
                -->
-                <version>3.2.4</version>
+                <version>3.3.0-SNAPSHOT</version>
                 <executions>
                     <execution>
                         <phase>package</phase>

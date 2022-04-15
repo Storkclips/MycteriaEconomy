@@ -10,7 +10,7 @@ import org.bukkit.entity.Player;
 import org.mineacademy.fo.command.SimpleCommand;
 
 /**
- * @author wmorale01, SpiderDeluxe
+ * @author  SpiderDeluxe
  * This command is used to link a machine.
  */
 public class LinkMachineCommand extends SimpleCommand {

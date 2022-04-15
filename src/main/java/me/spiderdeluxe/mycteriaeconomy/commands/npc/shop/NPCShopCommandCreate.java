@@ -1,7 +1,7 @@
 package me.spiderdeluxe.mycteriaeconomy.commands.npc.shop;
 
 import lombok.SneakyThrows;
-import me.spiderdeluxe.mycteriaeconomy.hook.ModelEngineUtil;
+import me.spiderdeluxe.mycteriaeconomy.hook.ModelEngineHook;
 import me.spiderdeluxe.mycteriaeconomy.models.npc.NPCShop;
 import me.spiderdeluxe.mycteriaeconomy.models.shop.Shop;
 import me.spiderdeluxe.mycteriaeconomy.util.EntityUtil;
@@ -16,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * @author wmorale01, SpiderDeluxe
+ * @author  SpiderDeluxe
  * This command is used to create a new npc shop
  */
 public class NPCShopCommandCreate extends SimpleSubCommand {
@@ -51,7 +51,7 @@ public class NPCShopCommandCreate extends SimpleSubCommand {
 		checkBoolean(!Shop.alreadyExist(shopName), "Sorry, already exist a shop with this name!");
 		checkBoolean(npcType.isAlive(), "You used an invalid entity type, try again using a working one!");
 		if(modelName != null)
-		checkBoolean(ModelEngineUtil.registeredModels.contains(modelName), "You used an invalid model type, try again using a working one!");
+			checkBoolean(ModelEngineHook.registeredModels.contains(modelName), "You used an invalid model type, try again using a working one!");
 
 		final NPCShop npcShop = new NPCShop(null, npcName, shopName, npcType);
 		npcShop.createNPC(location, modelName);
@@ -68,7 +68,7 @@ public class NPCShopCommandCreate extends SimpleSubCommand {
 			case 3:
 				return completeLastWord(EntityType.values());
 			case 4:
-			 return completeLastWord(ModelEngineUtil.registeredModels);
+				return completeLastWord(ModelEngineHook.registeredModels);
 		}
 		return new ArrayList<>();
 	}

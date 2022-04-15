@@ -2,9 +2,9 @@ package me.spiderdeluxe.mycteriaeconomy.models.shop;
 
 import lombok.Getter;
 import lombok.Setter;
-import me.spiderdeluxe.mycteriaeconomy.cache.LinkedChest;
-import me.spiderdeluxe.mycteriaeconomy.cache.ListStorage;
+import me.spiderdeluxe.mycteriaeconomy.cache.DataStorage;
 import me.spiderdeluxe.mycteriaeconomy.models.Wallet;
+import me.spiderdeluxe.mycteriaeconomy.models.machine.LinkedChest;
 import me.spiderdeluxe.mycteriaeconomy.settings.Settings;
 import me.spiderdeluxe.mycteriaeconomy.util.BalanceUtil;
 import me.spiderdeluxe.mycteriaeconomy.util.InventoryUtil;
@@ -363,7 +363,7 @@ public class Shop extends YamlConfig {
 		Valid.checkNotNull(this, "This shop doesn't exist for now!");
 
 		if (owner == ShopOwnerType.STATE)
-			ListStorage.getInstance().increaseFounds(amount);
+			DataStorage.getInstance().increaseFounds(amount);
 		else {
 			profit += amount;
 			save("Profit", profit);
@@ -374,7 +374,7 @@ public class Shop extends YamlConfig {
 		Valid.checkNotNull(this, "This shop doesn't exist for now!");
 
 		if (owner == ShopOwnerType.STATE)
-			ListStorage.getInstance().decreaseFounds(amount);
+			DataStorage.getInstance().decreaseFounds(amount);
 		else {
 			profit -= amount;
 			save("Profit", profit);
@@ -774,7 +774,7 @@ public class Shop extends YamlConfig {
 
 	public double getBalance() {
 		if (owner == ShopOwnerType.STATE) {
-			return ListStorage.getInstance().getNationalFounds();
+			return DataStorage.getInstance().getNationalFounds();
 		}
 		return getProfit();
 	}

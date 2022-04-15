@@ -6,7 +6,7 @@ import org.mineacademy.fo.command.SimpleCommandGroup;
 import org.mineacademy.fo.command.SimpleSubCommand;
 
 /**
- * @author wmorale01, SpiderDeluxe
+ * @author SpiderDeluxe
  * This command is used to reload the plugin's config.
  */
 public class EconomyCommandReload extends SimpleSubCommand {

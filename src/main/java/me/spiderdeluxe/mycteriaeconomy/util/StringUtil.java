@@ -1,7 +1,6 @@
 package me.spiderdeluxe.mycteriaeconomy.util;
 
 import org.bukkit.ChatColor;
-import org.bukkit.command.CommandSender;
 
 import java.text.DecimalFormat;
 
@@ -17,12 +16,4 @@ public class StringUtil {
         return new DecimalFormat(builder.toString()).format(number);
     }
 
-    public static Double parseDouble(final CommandSender sender, final String string) {
-        try {
-            return Double.parseDouble(string);
-        } catch (final Exception e) {
-            Messager.sendErrorMessage(sender, "&cYou must enter a numeric value.");
-            return null;
-        }
-    }
 }
